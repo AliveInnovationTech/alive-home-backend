@@ -1,0 +1,47 @@
+{
+  "env": {
+    "jest": true
+  },
+  "extends": ["plugin:jsdoc/recommended"],
+  "plugins": [
+    "jsdoc"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "globals": {
+    "cache": true,
+    "createErrorResponse": true,
+    "createSuccessResponse": true,
+    "isProduction": true,
+    "userEvents": true
+  },
+  "rules": {
+    "indent": ["error", 4],
+    "padded-blocks": ["error", { "blocks": "never" }],
+    "padding-line-between-statements": [
+      "error",
+      { "blankLine": "always", "prev": ["const", "let", "var"], "next": ["if","switch"]},
+      { "blankLine": "always", "prev": ["if","switch"], "next":["const", "let", "var"]},
+      { "blankLine": "always", "prev": ["multiline-const"], "next":["const", "let", "var"]},
+      { "blankLine": "always", "prev": "*", "next": "return" }
+    ],
+    "semi": [ "error", "always"],
+    "object-property-newline": [2, { "allowAllPropertiesOnSameLine": false }],
+    "no-dupe-keys": "warn" ,
+    "quotes": ["error", "double"],
+    "no-unused-vars": ["error"],
+    "no-param-reassign": ["warn"],
+    "no-await-in-loop": ["warn"],
+    "no-restricted-syntax": ["off"],
+    "no-use-before-define": [
+      "error",
+      {
+        "functions": false,
+        "classes": true
+      }
+    ],
+    "no-bitwise": 1,
+    "consistent-return": "error"
+  }
+}

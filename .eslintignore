@@ -1,0 +1,9 @@
+node_modules/
+tests/
+views/
+bin/
+build/
+keys/
+scripts/
+.github/
+cleaningScripts.js
