@@ -1,32 +1,40 @@
 "use strict";
-const mongoose = require("mongoose");
-const mongoosePaginate = require("mongoose-paginate");
+const { Model } = require("sequelize");
 
-const schema = mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        index: true,
-        unique: true,
-        dropDups: true,
-    },
-    hierarchyLevel: {
-        type: Number,
-        required: true
-    },
-    description: {
-        type: String,
-        required: true,
-    },
-    inUse: {
-        type: Boolean,
-        allowNull: false,
-        default: true
-    },
-    permissions: [String]
-}, {
-    timestamps: true
-});
+module.exports = (sequelize, DataTypes) => {
+    class Role extends Model {
+        static associate(models) {
+            Role.belongsToMany(models.User, {
+                through: "user_roles",
+                foreignKey: "roleId",
+                otherKey: "userId",
+                as: "users"
+            });
+        }
+    }
 
-schema.plugin(mongoosePaginate);
-module.exports = mongoose.model("roles", schema);
+    Role.init(
+        {
+            roleId: {
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4,
+                primaryKey: true
+            },
+            name: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                unique: true
+            },
+            description: DataTypes.TEXT
+        },
+        {
+            sequelize,
+            modelName: "Role",
+            tableName: "roles",
+            timestamps: true,
+            paranoid: true
+        }
+    );
+
+    return Role;
+};

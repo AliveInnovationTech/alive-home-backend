@@ -3,7 +3,7 @@
 const router = require("express").Router();
  /* GET home page. */
 router.get('/', function(req, res, next) {
-  return res.status(200).render('index', { title: 'User Service' });
+  return res.status(200).render('index', { title: 'Alive Home' });
 });
 
 module.exports = router;

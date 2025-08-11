@@ -1,23 +1,16 @@
-const router = require("express").Router();
-const {gatekeeper} = require("mizala-gatekeeper");
-
-//get controller
-const {decodeHeaders} = require("../app/Middleware");
-const userController = require("../app/controllers/UserController");
-router.get("/check", userController.check);
-
-router.post("/", decodeHeaders, userController.create);
+"use strict";
+const express = require("express"); 
+const router = express.Router();
+const controller =require("../app/controllers/UserController")
 
 
-router.get("/", gatekeeper(), userController.fetchAll);
 
-router.get("/:id", gatekeeper(), userController.findOne);
+router.post("/", controller.createUser);
 
-router.put("/:id", gatekeeper(), userController.updateUser);
+router.get("/:userId", controller.getUserById);
 
-router.get("/:type/:value", gatekeeper(), userController.findByType);
+router.get("/", controller.fetchAllUsers);
 
-router.post("/:type/:value", gatekeeper(), userController.findOrCreate);
-
+router.delete("/:userId", controller.deleteUser);
 
 module.exports = router;

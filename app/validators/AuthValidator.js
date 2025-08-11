@@ -1,56 +1,18 @@
 "use strict";
 const Joi = require("joi");
-const debug = require("debug")("app:debug");
+const{validate} = require("../utils/helpers")
 
-const userRepository = require("../repositories/UserRepository");
-const {
-    validate,
-    verifyJWT
-} = require("../utils/helpers");
+// exports.register = async (payload) => {
+//     const schema = Joi.object({
+//         email: Joi.string().email().required(),
+//         phoneNumber: Joi.string().required(),
+//         password: Joi.string().min(8).max(15).required(),
+//         firstName: Joi.string().required(),
+//         lastName: Joi.string().required()
+//     });
 
-exports.savePassword = async (req, res, next) => {
-    let token = req.headers["x-access-token"] || req.headers["authorization"] || req.body.token;
-
-    if (!token) throw new Error("No token provided.");
-    if (token.startsWith("Bearer ")) {
-        token = token.slice(7, token.length);
-    }
-
-    const { userId } = await verifyJWT(token);
-    debug(userId);
-    if (!userId) {
-        throw new Error("Failed to validate provided token.");
-    }
-
-    const schema = {
-        password: Joi.string()
-            .required(),
-        userId: Joi.string()
-            .required()
-    };
-
-    req.body.userId = userId;
-
-    const result = validate(schema, req.body);
-
-    if (result) {
-        return createErrorResponse(res, result, 422);
-    }
-
-    //check if auth credentials exist
-    const auth = await userRepository.findOne({
-        userId: req.body.userId,
-        clientId: res.clientId
-    });
-
-    if (!auth) {
-        return createErrorResponse(res, "User Not Found", 404);
-    }
-
-    res.auth = auth;
-
-    return next();
-};
+//     return validate(schema, payload);
+// };
 
 exports.login = async (payload) => {
     const schema = Joi.object({

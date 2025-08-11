@@ -8,7 +8,7 @@ const debug = require('debug')('app:debug');
 const http = require('http');
 const cluster = require("cluster");
 const app = require('../app');
-const {Worker} = require("worker_threads");
+const { Worker } = require("worker_threads");
 let workers = [];
 let numCores = require('os').cpus().length;
 
@@ -70,7 +70,7 @@ const setupExpress = () => {
     const port = normalizePort(process.env.PORT || '3000');
     app.set('port', port);
 
-    debug("Starting", process.env.APP_NAME, port);
+    console.log("Starting", process.env.APP_NAME, port);
 
     //print all config here
     // debug("ENV", config);
@@ -100,7 +100,7 @@ const setupExpress = () => {
 const setupServer = (isClusterRequired) => {
 
     // if it is a master process then call setting up worker process
-    createCustomWorkers(process.env.NO_OF_WORKERS);
+    // createCustomWorkers(1);
     if (isClusterRequired && cluster.isMaster) {
         setupWorkerProcesses();
     } else {
@@ -131,9 +131,9 @@ function normalizePort(val) {
 
 let createCustomWorkers = (worker = 1) => {
     console.log(`========== Creating  ${worker} number of background threads/workers ===========`);
-    for(let i = 0; i < worker; i++){
+    for (let i = 0; i < worker; i++) {
         (new Promise((resolve, reject) => {
-            const worker = new Worker("./workers/BackgroundService.js");
+            //  const worker = new Worker("./workers/BackgroundService.js");
             worker.on('message', resolve);
             worker.on('error', (error) => {
                 console.log("An error Occurred", error);
@@ -143,7 +143,7 @@ let createCustomWorkers = (worker = 1) => {
                 console.log("An Exit error occurred", code);
                 if (code !== 0)
                     return reject(new Error(`Worker stopped with exit code ${code}`));
-                if(isProduction) return createCustomWorkers();
+                if (isProduction) return createCustomWorkers();
             });
 
         }))

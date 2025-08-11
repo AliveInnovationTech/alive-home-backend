@@ -1,23 +1,17 @@
-"use strict";
-const router = require("express")
-    .Router();
+" use strict";
+const express = require("express");
+const router = express.Router();
+const controller = require("../app/controllers/AuthController");
 
-const verifyRouter = require("./auth/verify");
-const { gatekeeper } = require("mizala-gatekeeper");
-//get controller
-const authController = require("../app/controllers/AuthController");
 
-/* Special route handlers forming basis for API auth (authentication and authorization) */
-router.post("/validate-user-access", authController.validateUserAccess);
-router.post("/validate-partner-access", authController.validatePartnerAccess);
-// special route 
+router.post("/login", controller.login);
 
-router.use("/verify", verifyRouter);
+router.get("/me", controller.me);
 
-router.post("/login", authController.login);
+router.post("/forgot-password", controller.forgotPassword);
 
-router.post("/token/refresh", authController.refresh);
+router.post("/reset-password/:userId/:token", controller.resetPassword);
 
-router.get("/me", gatekeeper(), authController.me);
+router.post("/update-password", controller.updatePassword);
 
 module.exports = router;

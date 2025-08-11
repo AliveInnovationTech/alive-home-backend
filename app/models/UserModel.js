@@ -1,101 +1,236 @@
 "use strict";
-const mongoose = require("mongoose");
-const dayjs = require("dayjs");
-const mongoosePaginate = require("mongoose-paginate");
+const { Model } = require("sequelize");
+const bcrypt = require("bcryptjs");
 const { STATUS } = require("../utils/constants");
 
-const schema = mongoose.Schema({
-    role: {
-        type: String,
-        required: true,
-        index: true,
-        default: "user",
-    },
-    email: {
-        type: String,
-        index: true
-    },
-    phoneNumber: {
-        type: String,
-        index: true
-    },
-    countryCode: {
-        type: String,
-        default: "ng"
-    },
-    name: {
-        type: String,
-        required: true
-    },
-    firstName: {
-        type: String,
-    },
-    status: {
-        type: String,
-        required: true,
-        default: STATUS.ACTIVE,
-    },
-    password: {
-        type: String,
-    },
-    avatar: {
-        type: String,
-        default: null
-    },
-    birthday: {
-        day: {
-            default: null,
-            type: Number,
-        },
-        month: {
-            default: null,
-            type: Number,
-        },
-        year: {
-            default: null,
-            type: Number,
-        },
-    },
-    referrer: {
-        type: String
-    },
-    referrerId: {
-        type: String
-    },
-    agentId: {
-        type: String,
-        index: true
-    },
-    address: {
-        type: String,
-    },
-    emailVerifiedAt: { type: Number },
-    phoneNumberVerifiedAt: { type: Number },
-    lastLoginIp: { type: String },
-    lastLoginAt: { type: Date },
-    deletedAt: { type: Number },
-}, {
-    toJSON: {
-        transform: function (_, ret) {
-            ret.id = ret._id.toString();
-            ret.userId = ret._id.toString();
-            ret.createdAt = dayjs(ret.createdAt)
-                .unix();
-            ret.updatedAt = dayjs(ret.updatedAt)
-                .unix();
-            ret.hasPassword = !!ret.password;
+module.exports = (sequelize, DataTypes) => {
+    class User extends Model {
+        static associate(models) {
+            User.belongsToMany(models.Role, {
+                through: "user_roles",
+                foreignKey: "userId",
+                otherKey: "roleId",
+                as: "roles"
+            });
 
-            delete ret.__v;
-            delete ret.password;
-            delete ret._id;
-            delete ret.roles;
-            delete ret.teams;
+            User.hasOne(models.Realtor, {
+                foreignKey: 'userId',
+                as: 'realtor',
+                onDelete: 'CASCADE',
+                hooks: true
+            });
+
+            User.hasOne(models.Developer, {
+                foreignKey: 'userId',
+                as: 'developer',
+                onDelete: 'CASCADE',
+                hooks: true
+            });
+ 
+            User.hasOne(models.Owner, {
+                foreignKey: 'userId',
+                as: 'owner',
+                onDelete: 'CASCADE',
+                hooks: true
+            });
+
+            User.hasOne(models.Buyer, {
+                foreignKey: 'userId',
+                as: 'buyer',
+                onDelete: 'CASCADE',
+                hooks: true
+            });
         }
-    },
-    strict: false,
-    timestamps: true
-});
 
-schema.index({ "$**": "text" });
-schema.plugin(mongoosePaginate);
-module.exports = mongoose.model("users", schema);
+        async validatePassword(password) {
+            return bcrypt.compare(password, this.password);
+        }
+
+        static registerHooks(models) {
+            this.afterCreate(async (user) => {
+                const { Role } = models;
+                const defaultRole = await Role.findOne({ 
+                    where: { name: 'USER' } 
+                });
+                if (defaultRole) {
+                    await user.addRole(defaultRole);
+                }
+            });
+            
+            this.beforeValidate(async (user) => {
+                if (user.isNewRecord) return;
+                
+                const existingProfiles = {};
+                const profileTypes = [
+                    'realtor',
+                    'developer',
+                    'homeowner',
+                    'buyer'
+                ];
+                
+                for (const type of profileTypes) {
+                    const profile = await user[`get${type.charAt(0).toUpperCase() + type.slice(1)}`]();
+                    if (profile) {
+                        existingProfiles[type] = profile.profileId;
+                    }
+                }
+                
+                user.existingProfiles = existingProfiles;
+            });
+        }
+    }
+
+    User.init(
+        {
+            userId: {
+                type: DataTypes.UUID,
+                defaultValue: DataTypes.UUIDV4,
+                primaryKey: true,
+                allowNull: false
+            },
+            roleId: {
+                type: DataTypes.UUID,
+                allowNull: false,
+                references: {
+                    model: 'roles',
+                    key: 'role_id'
+                }
+            },
+            email: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                unique: {
+                    name: 'users_email_unique',
+                    msg: 'Email address already in use'
+                },
+                validate: {
+                    isEmail: {
+                        msg: 'Invalid email format'
+                    }
+                }
+            },
+            phoneNumber: {
+                type: DataTypes.STRING,
+                unique: {
+                    name: 'users_phone_unique',
+                    msg: 'Phone number already in use'
+                },
+                validate: {
+                    is: {
+                        args: /^\+\d{1,15}$/,
+                        msg: 'Phone must be in E.164 format (+1234567890)'
+                    }
+                }
+            },
+            password: {
+                type: DataTypes.STRING(64),
+                allowNull: false,
+                set(value) {
+                    const hash = bcrypt.hashSync(value, 10);
+                    this.setDataValue("password", hash);
+                },
+                validate: {
+                    len: {
+                        args: [8, 15],
+                        msg: 'Password must be 8-15 characters'
+                    }
+                }
+            },
+            firstName: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                validate: {
+                    notEmpty: {
+                        msg: 'First name is required'
+                    }
+                }
+            },
+            lastName: {
+                type: DataTypes.STRING,
+                allowNull: false,
+                validate: {
+                    notEmpty: {
+                        msg: 'Last name is required'
+                    }
+                }
+            },
+            profilePictureUrl: {
+                type: DataTypes.STRING,
+                validate: {
+                    isUrl: {
+                        msg: 'Invalid URL format'
+                    }
+                },
+                defaultValue: null
+            },
+            accountStatus: {
+                type: DataTypes.ENUM(...Object.values(STATUS)),
+                defaultValue: STATUS.PENDING,
+                allowNull: false
+            },
+            isEmailVerified: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
+            emailVerifiedAt: {
+                type: DataTypes.DATE,
+                defaultValue: null
+            },
+            lastLoginAt: {
+                type: DataTypes.DATE,
+                defaultValue: null
+            },
+            lastLoginIp: {
+                type: DataTypes.STRING(45),
+                validate: {
+                    isIP: {
+                        msg: 'Invalid IP address format'
+                    }
+                },
+                defaultValue: null
+            },
+            cloudinary_id: {
+                type: DataTypes.STRING,
+                validate: {
+                    isUrl: {
+                        msg: 'Invalid URL format'
+                    }
+                },
+                defaultValue: null
+            }
+        },
+        {
+            sequelize,
+            modelName: "User",
+            tableName: "users",
+            timestamps: true,
+            underscored: true,
+            paranoid: true,
+            indexes: [
+                { fields: ["account_status"] },
+                { fields: ["email"] },
+                { fields: ["phone_number"] }
+            ],
+            defaultScope: {
+                attributes: {
+                    exclude: ['password']
+                }
+            },
+            scopes: {
+                withPassword: {
+                    attributes: {
+                        include: ['password']
+                    }
+                }
+            }
+        }
+    );
+
+    User.beforeValidate((user) => {
+        if (!user.phone && !user.email) {
+            throw new Error('Either email or phone must be provided');
+        }
+    });
+
+    return User;
+};

@@ -1,249 +1,282 @@
 "use strict";
-const dayjs = require("dayjs");
-const bcrypt = require("bcryptjs");
-const uuid = require("uuid/v4");
-
-const userRepository = require("../repositories/UserRepository");
-const partnerRepository = require("../repositories/PartnerRepository");
+const User = require("../models/UserModel");
+const { StatusCodes } = require("http-status-codes")
 const authValidator = require("../validators/AuthValidator");
-const userEvents = require("../events/UserEvent");
-const { EVENT, RESPONSE_MESSAGES } = require("../utils/constants");
-
-const {
-    generateJWT,
-    verifyJWT
-} = require("../utils/helpers");
-
-exports.generateTokens = async (user, type = "auth") => {
-    const secret = process.env.SECURITY_TOKEN;
-    const tokenExpiry = dayjs().add(12, "hour").unix();
-
-    let token = generateJWT({
-        userId: user.userId || user._id,
-        // TODO: inject session info here
-        type,
-        exp: tokenExpiry,
-        data: user.userId || user._id
-    }, secret);
-
-    const refreshExpiry = dayjs()
-        .add(1, "day")
-        .unix();
-
-    let refresh = generateJWT({
-        exp: refreshExpiry,
-        data: user.userId || user._id,
-        type,
-        mode: "refresh"
-    }, secret);
-
-    return {
-        token,
-        tokenExpiry,
-        refreshExpiry,
-        refresh
-    };
-};
-
-exports.login = async (payload) => {
-    const validationError = await authValidator.login(payload);
-
-    if (validationError) {
-        return {
-            error: validationError,
-            statusCode: 422
-        };
-    }
-
-    const query = {};
-
-    if (payload.phoneNumber) query.phoneNumber = payload.phoneNumber;
-
-    if (payload.email) query.email = payload.email;
-
-    let user = await userRepository.findOne(query);
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto-random-string")
+const { Op } = require("sequelize");
+const Token = require("../models/TokenModel");
+const passwordValidator = require("../validators/PasswordValidator");
+const {sendEmailNotification} = require("../services/NotificationService")
 
 
-    if (!user) {
-        console.log("user not found");
 
-        return {
-            error: "Invalid Credentials",
-            statusCode: 401
-        };
-    }
 
-    if (!user.password) {
-        console.log("password not found");
 
-        return {
-            error: "Invalid Credentials",
-            statusCode: 401
-        };
-    }
-
-    const check = bcrypt.compareSync(payload.password, user.password);
-
-    if (!check) {
-        console.log("password is not correct");
-
-        return {
-            error: "Invalid Credentials",
-            statusCode: 401
-        };
-    }
-
-    let {
-        token,
-        tokenExpiry,
-        refreshExpiry,
-        refresh
-    } = await this.generateTokens(user);
-
-    await userRepository.update({_id: user.userId}, {lastLoginAt: new Date()});
-
-    userEvents.emit(EVENT.USER.LOGIN, user.toJSON(), {
-        requestId: payload.requestId || uuid(),
-        headers: payload.headers,
-        deviceInformation: {
-            ...payload.deviceInformation || {},
-            //ip: payload.ip,
-        },
-    });
-
-    return {
-        data: {
-            actionType: "logged-in",
-            user,
-            token,
-            tokenExpiry,
-            refreshTokenExpiry: refreshExpiry,
-            refresh
-        }
-    };
-};
-
-exports.me = async (payload) => {
-    return {
-        data: payload.user,
-        statusCode: 200
-    };
-};
-
-exports.refresh = async (payload) => {
-    if (!payload.refresh) {
-        return {
-            error: "Refresh Token Not Found",
-            statusCode: 404
-        };
-    }
-
-    let decoded = verifyJWT(payload.refresh, payload.client?.secret);
-
-    if (!decoded) {
-        return {
-            error: "Failed to authenticate token...",
-            statusCode: 401
-        };
-    }
-
-    let auth = await userRepository.findById(decoded.data);
-
-    if (!auth) {
-        return {
-            error: "User Not Found",
-            statusCode: 404
-        };
-    }
-
-    let {
-        token,
-        refresh,
-        tokenExpiry,
-        refreshExpiry,
-    } = await this.generateTokens(auth, payload.client);
-
-    return {
-        data: {
-            user: auth,
-            token,
-            tokenExpiry,
-            refreshTokenExpiry: refreshExpiry,
-            refresh
-        }
-    };
-};
-
-exports.validateUserAccess = async (payload) => {
+exports.login = async (body) => {
     try {
-        const response = {};
-
-        let decoded = verifyJWT(payload.token, process.env.SECURITY_TOKEN);
-
-        if (!decoded) {
+        const validatorError = await authValidator.login(body);
+        if (validatorError) {
             return {
-                error: "Failed to authenticate token...",
-                statusCode: 401
-            };
+                error: validatorError,
+                statusCode: StatusCodes.BAD_REQUEST
+            }
         }
+        const { email, phoneNumber, password } = body;
 
-        response.user = await userRepository.findById({
-            _id: decoded.data
-        });
-
-        if (!response.user) {
+        const user = await User.findOne({ $or: [{ email }, { phoneNumber }] });
+        if (!user) {
             return {
                 error: "User not found",
-                statusCode: 404
+                statusCode: StatusCodes.NOT_FOUND
             };
         }
 
-        response.user = {
-            userId: response.user._id,
-            name: response.user.name,
-            role: response.user.role || "user",
-            teams: response.user.teams,
-            avatar: response.user.avatar,
-            email: response.user.email,
-            phoneNumber: response.user.phoneNumber,
-            referrer: response.user.referrer,
-            referrerId: response.user.referrerId
-        };
-
-        response.authenticationType = "jwt";
-        response.userId = response.user.userId;
-
-        return { data: response };
-    } catch (error) {
-        console.log("Error", error);
-
-        return { error: error.message };
-    }
-};
-
-exports.validatePartnerAccess = async (payload) => {
-    try {
-        if(!payload.partnerId || !payload.partnerSecret) return {
-            error: RESPONSE_MESSAGES.UNAUTHORIZED_ERROR,
-            statusCode: 403
-        };
-
-        let response = await partnerRepository.findOne({partnerId: payload.partnerId});
-
-        if (!response) {
+        const isMatch = await user.validatePassword(password);
+        if (!isMatch) {
             return {
-                error: RESPONSE_MESSAGES.UNAUTHORIZED_ERROR,
-                statusCode: 403
+                error: "Invalid credentials",
+                statusCode: StatusCodes.UNAUTHORIZED
             };
         }
 
-        response = response.toJSON();
-        response.authenticationType = "partner-secret";
+        const token = jwt.sign({ userId: user.id },
+            process.env.SECURITY_TOKEN,
+            { expiresIn: "1h" },
+            { algorithm: "HS256" }
+        );
 
-        return { data: response };
-    } catch (error) {
-        console.log("Error", error);
+        return {
+            data: {
+                user: {
+                    userId: user.userId,
+                    email: user.email,
+                    phoneNumber: user.phoneNumber,
+                    roles: user.roles.map(role => role.name),
+                    profilePictureUrl: user.profilePictureUrl
+                },
+                token
+            },
+            statusCode: StatusCodes.OK
+        };
 
-        return { error: error.message };
+    } catch (e) {
+        console.log("An unknown error occurred during login. Please try again later");
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        }
     }
-};
+}
+
+exports.me = async (payload) => {
+    try {
+        const user = await User.findById(payload.userId);
+        if (!user) {
+            return {
+                error: "Oops! User not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                user: {
+                    userId: user.userId,
+                    email: user.email,
+                    phoneNumber: user.phoneNumber,
+                    roles: user.roles.map(role => role.name),
+                    profilePictureUrl: user.profilePictureUrl
+                }
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.log("An unknown error occurred while fetching user data. Please try again later");
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+exports.forgotPassword = async (body) => {
+    try {
+        const validatorError = await passwordValidator.forgotPassword(body);
+        if (validatorError) {
+            return {
+                error: validatorError,
+                statusCode: StatusCodes.BAD_REQUEST
+            }
+        }
+
+        const { email } = body;
+        const user = await User.findOne({ email });
+        if (!user) {
+            return {
+                error: "User not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+      let token = await Token.findOne({
+            where: {
+                userId: user.id,
+                type: 'PASSWORD_RESET',
+                expiresAt: {
+                    [Op.gt]: new Date() 
+                }
+            }
+        });
+
+        if (token) {
+            return {
+                data: {
+                    token: token.token
+                },
+                statusCode: StatusCodes.OK
+            };
+        }
+
+        const newToken = crypto({ length: 32 });
+        await Token.create({
+            token,
+            userId: user.id
+        });
+
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=/${user.id}/${newToken}`;
+
+        await sendEmailNotification(
+            user.email, 
+            user.firstName, 
+            "Password Reset Request", 
+            "forgotPassword",
+            {
+            link: resetLink
+            }
+        );
+
+        return {
+            data: {
+                message: "Password reset link sent to your email"
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.log("An unknown error occurred during password reset. Please try again later");
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+exports.resetPassword = async (body, userId, token) => {
+    try {
+        const validatorError = await passwordValidator.resetPassword(body);
+        if (validatorError) {
+            return {
+                error: validatorError,
+                statusCode: StatusCodes.BAD_REQUEST
+            }
+        }
+
+        //const { userId, token, newPassword } = body;
+        const user = await User.findById(userId);
+        if (!user) {
+            return {
+                error: "User not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        const existingToken = await Token.findOne({
+            where: {
+                userId: user.id,
+                token,
+                type: 'PASSWORD_RESET',
+                expiresAt: {
+                    [Op.gt]: new Date() 
+                }
+            }
+        });
+
+        if (!existingToken) {
+            return {
+                error: "Invalid or expired token",
+                statusCode: StatusCodes.UNAUTHORIZED
+            };
+        }
+
+        user.password = body.newPassword;
+        await user.save();
+        await existingToken.destroy();
+
+        return {
+            data: {
+            user:{
+            userId: user.id,
+            message: "Password successfully reset"
+            },
+          statusCode: StatusCodes.OK
+        }
+    }
+
+    } catch (e) {
+        console.log("An unknown error occurred during password reset. Please try again later");
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        }
+    }
+}
+
+exports.changePassword = async(body, userId) => {
+    try {
+        const validatorError = await passwordValidator.updatePassword(body);
+        if (validatorError) {
+            return {
+                error: validatorError,
+                statusCode: StatusCodes.BAD_REQUEST
+            }
+        }
+
+        const { oldPassword, newPassword } = body;
+        const user = await User.findById(userId);
+        if (!user) {
+            return {
+                error: "User not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        const isMatch = await user.validatePassword(oldPassword);
+        if (!isMatch) {
+            return {
+                error: "Old password is incorrect",
+                statusCode: StatusCodes.UNAUTHORIZED
+            };
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        return {
+            data: {
+                user: {
+                    userId: user.id,
+                    message: "Password successfully updated"
+                }
+            },
+            statusCode: StatusCodes.OK
+        };
+    } catch (e) {
+        console.log("An unknown error occurred during password update. Please try again later");
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        }
+    }
+}
