@@ -1,83 +1,66 @@
 "use strict";
 const authService = require("../services/AuthService");
 const response = require("../utils/responses");
-/**
- * Login
- *
- * @param req
- * @param res
- * @returns {Promise<void>}
- */
+
+
 exports.login = async (req, res) => {
     const {
         error,
-        data,
-        statusCode
-    } = await authService.login({
-        ...req.body,
-        ip: req.ip,
-        requestId: req.headers["x-request-id"],
-        headers: req.headers,
-    });
+        statusCode,
+        data
+    } = await authService.login(req.body);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
-};
+
+}
 
 exports.me = async (req, res) => {
     const {
         error,
-        data,
-        statusCode
-    } = await authService.me({
-        user: res.contextUser,
-    });
+        statusCode,
+        data
+    } = await authService.me(req.user);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
-};
 
-exports.refresh = async (req, res) => {
+}
+
+exports.forgotPassword = async (req, res) => {
     const {
         error,
-        data,
-        statusCode
-    } = await authService.refresh({
-        ...req.body,
-        user: res.user,
-        client: res.client
-    });
+        statusCode,
+        data
+    } = await authService.forgotPassword(req.body);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
-};
+}
 
-exports.validateUserAccess = async (req, res) => {
+exports.resetPassword = async (req, res) => {
     const {
         error,
-        data,
-        statusCode
-    } = await authService.validateUserAccess({
-        token: req.body.token,
-    });
+        statusCode,
+        data
+    } = await authService.resetPassword(req.body, req.params.userId, req.params.token);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
-};
+}
 
-exports.validatePartnerAccess = async (req, res) => {
+exports.updatePassword = async (req, res) => {
     const {
         error,
-        data,
-        statusCode
-    } = await authService.validatePartnerAccess(req.body);
+        statusCode,
+        data
+    } = await authService.changePassword(req.body, req.params);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
-};
-
+}

@@ -1,113 +1,54 @@
 "use strict";
-const userService = require("../services/UserService");
-const authService = require("../services/AuthService");
 const response = require("../utils/responses");
+const userService = require("../services/UserService");
 
-exports.check = async (req, res) => {
+
+
+exports.createUser = async (req, res) => {
     const {
-        data,
-        statusCode
-    } = await userService.check(req.query);
+        error,
+        statusCode,
+        data
+    } = await userService.createUser(req.body);
+
+    if (error) return response.error(res, error, statusCode);
+
+
+    return response.success(res, data, statusCode);
+}
+
+exports.getUserById = async (req, res) => {
+    const {
+        error,
+        statusCode,
+        data
+    } = await userService.getUserById(req.params.userId);
+
+    if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
 };
 
-exports.create = async (req, res) => {
+exports.fetchAllUsers = async (req, res) => {
     const {
         error,
         statusCode,
-        data: user
-    } = await userService.createUser(req.body, res.contextUser);
+        data
+    } = await userService.fetchAllUsers(req.query.page, req.query.limit, req.user);
 
     if (error) return response.error(res, error, statusCode);
-    //generate token
-
-    const {
-        token,
-        refresh,
-        tokenExpiry,
-        refreshExpiry
-    } = await authService.generateTokens(user);
-
-
-    return response.success(res, {
-        verification: false,
-        user,
-        token,
-        refresh,
-        tokenExpiry,
-        refreshExpiry
-    }, statusCode);
-};
-
-exports.fetchAll = async (req, res) => {
-    const {
-        data,
-        statusCode
-    } = await userService.fetchAllUsers(req.query);
 
     return response.paginated(res, data, statusCode);
 };
 
-exports.findOne = async (req, res) => {
-    const {
-        data,
-        error,
-        statusCode
-    } = await userService.findUser(req.params.id);
-
-    if(error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode);
-};
-
-exports.findByType = async (req, res) => {
-    const {
-        data,
-        error,
-        statusCode
-    } = await userService.findByType(req.headers.source, req.params.type, req.params.value);
-
-    if(error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode);
-};
-
-exports.updateUser = async (req, res) => {
-    const {
-        data,
-        error,
-        statusCode
-    } = await userService.updateUser(req.params.id, req.body, res.user, req.headers.source);
-
-    if(error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode);
-};
-
-exports.findOrCreate = async (req, res) => {
-    const {
-        data,
-        error,
-        statusCode
-    } = await userService.findOrCreate(req.params.type, req.params.value, {
-        ... req.body,
-        withToken: req.query.withToken
-    });
-
-    if(error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode);
-};
-
 exports.deleteUser = async (req, res) => {
     const {
-        data,
         error,
-        statusCode
-    } = await userService.deleteUser(req.params.id);
+        statusCode,
+        data
+    } = await userService.deleteUser(req.params.userId);
 
-    if(error) return response.error(res, error, statusCode);
+    if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
 };

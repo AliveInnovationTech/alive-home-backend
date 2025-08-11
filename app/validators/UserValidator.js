@@ -1,8 +1,9 @@
 "use strict";
 const Joi = require("joi");
 const { validate } = require("../utils/helpers");
-const userRepository = require("../repositories/UserRepository");
-const { ROLES } = require("../utils/constants");
+const User = require("../models/UserModel");
+
+
 
 exports.createUser = async (payload) => {
     const {
@@ -11,25 +12,24 @@ exports.createUser = async (payload) => {
     } = payload;
 
     let schema = {
-        name: Joi.string(),
-        email: Joi.string().email(),
-        phoneNumber: Joi.string(),
-        password: Joi.string(),
-        role: Joi.string().valid(ROLES.USER, ROLES.AGENT, ROLES.PARTNER),
+        email: Joi.string().email().required(),
+        phoneNumber: Joi.string().required(),
+        password: Joi.string().min(8).max(15).required(),
+        firstName: Joi.string().required(),
+        lastName: Joi.string().required(),
+        roleId: Joi.string()
     };
 
     const error = validate(schema, payload);
 
     if (error) return error;
 
-    //check if both email and phoneNumber are empty. we need one of it
     if (!email && !phoneNumber) {
         return "Email or Phone Number should be provided";
     }
 
-    //check if email or phone number exists already
     if (email) {
-        const emailExists = await userRepository.findOne({
+        const emailExists = await User.findOne({
             email
         });
 
@@ -39,7 +39,7 @@ exports.createUser = async (payload) => {
     }
 
     if (phoneNumber) {
-        const phoneExists = await userRepository.findOne({
+        const phoneExists = await User.findOne({
             phoneNumber
         });
 
@@ -48,5 +48,7 @@ exports.createUser = async (payload) => {
         }
     }
 
-    return  null;
+    return null;
+
+
 };
