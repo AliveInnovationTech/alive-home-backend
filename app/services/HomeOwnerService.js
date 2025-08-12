@@ -1,7 +1,17 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
-const { User, Owner } = sequelize.models;
+
+// Wait for models to be loaded
+const getModels = () => {
+    if (!sequelize.models.User || !sequelize.models.Owner) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User,
+        Owner: sequelize.models.Owner
+    };
+};
 const homeOwnerValidator = require("../validators/HomeOwnerValidator");
 
 exports.createHomeOwnerProfile = async (payload, user) => {
@@ -14,6 +24,8 @@ exports.createHomeOwnerProfile = async (payload, user) => {
             };
         }
 
+        const { User, Owner } = getModels();
+        
         // Check if user already has a homeowner profile
         const existingOwner = await Owner.findOne({
             where: { userId: user.userId }
@@ -25,7 +37,7 @@ exports.createHomeOwnerProfile = async (payload, user) => {
                 statusCode: StatusCodes.CONFLICT
             };
         }
-
+        
         const owner = await Owner.create({
             userId: user.userId,
             primaryResidence: payload.primaryResidence,
@@ -67,6 +79,8 @@ exports.createHomeOwnerProfile = async (payload, user) => {
 
 exports.getHomeOwnerProfile = async (ownerId) => {
     try {
+        const { User, Owner } = getModels();
+        
         const owner = await Owner.findByPk(ownerId, {
             include: [
                 {
@@ -115,6 +129,8 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
             };
         }
 
+        const { User, Owner } = getModels();
+        
         const owner = await Owner.findByPk(ownerId);
         if (!owner) {
             return {
@@ -177,6 +193,8 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
 
 exports.getAllHomeOwners = async (page = 1, limit = 10, search = '') => {
     try {
+        const { User, Owner } = getModels();
+        
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -233,6 +251,7 @@ exports.getAllHomeOwners = async (page = 1, limit = 10, search = '') => {
 
 exports.deleteHomeOwnerProfile = async (ownerId, user) => {
     try {
+        const { User, Owner } = getModels();
         const owner = await Owner.findByPk(ownerId);
         if (!owner) {
             return {
@@ -269,6 +288,8 @@ exports.deleteHomeOwnerProfile = async (ownerId, user) => {
 
 exports.verifyHomeOwner = async (ownerId, verified, user) => {
     try {
+        const { User, Owner } = getModels();
+        
         // Only admins can verify homeowners
         if (user.role !== 'ADMIN') {
             return {
@@ -308,6 +329,7 @@ exports.verifyHomeOwner = async (ownerId, verified, user) => {
 
 exports.getMyHomeOwnerProfile = async (userId) => {
     try {
+        const { User, Owner } = getModels();
         const owner = await Owner.findOne({
             where: { userId },
             include: [
@@ -349,6 +371,7 @@ exports.getMyHomeOwnerProfile = async (userId) => {
 
 exports.uploadVerificationDocuments = async (ownerId, files, user) => {
     try {
+        const { User, Owner } = getModels();
         const owner = await Owner.findByPk(ownerId);
         if (!owner) {
             return {

@@ -9,7 +9,10 @@
   "scripts": {
     "dev": "nodemon ./bin/www",
     "start": "node ./bin/www",
-    "test": "jest --verbose -c jest.config.js"
+    "test": "jest --verbose -c jest.config.js",
+    "migrate": "node lib/migrate.js",
+    "seed": "node lib/seed.js",
+    "migrate:seed": "npm run migrate && npm run seed"
   },
   "dependencies": {
     "axios": "^0.21.1",

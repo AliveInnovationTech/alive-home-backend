@@ -598,6 +598,630 @@ Form data with files
 - `409` - Conflict
 - `500` - Internal Server Error
 
+## Buyer Profile APIs
+
+### 1. Create Buyer Profile
+**POST** `/buyers`
+
+Creates a new buyer profile for the authenticated user.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "minimumBudget": 500000,
+  "maximumBudget": 2000000,
+  "preApproved": false,
+  "preApprovalAmount": null,
+  "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+  "propertyType": "HOUSE",
+  "cloudinary_id": "cloudinary_id_here"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "minimumBudget": 500000,
+    "maximumBudget": 2000000,
+    "preApproved": false,
+    "preApprovalAmount": null,
+    "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+    "propertyType": "HOUSE",
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+2348012345678",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 2. Get All Buyers
+**GET** `/buyers`
+
+Retrieves all buyer profiles with pagination, search, and filters.
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `search` (optional): Search by user name or email
+- `propertyType` (optional): Filter by property type
+- `minBudget` (optional): Filter by minimum budget
+- `maxBudget` (optional): Filter by maximum budget
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "buyerId": "uuid-here",
+      "minimumBudget": 500000,
+      "maximumBudget": 2000000,
+      "preApproved": false,
+      "preApprovalAmount": null,
+      "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+      "propertyType": "HOUSE",
+      "user": {
+        "userId": "user-uuid",
+        "firstName": "John",
+        "lastName": "Doe",
+        "email": "john@example.com",
+        "phoneNumber": "+2348012345678",
+        "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+      }
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "pageSize": 10,
+    "totalBuyers": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### 3. Get My Buyer Profile
+**GET** `/buyers/me`
+
+Retrieves the authenticated user's buyer profile.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "minimumBudget": 500000,
+    "maximumBudget": 2000000,
+    "preApproved": false,
+    "preApprovalAmount": null,
+    "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+    "propertyType": "HOUSE",
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+2348012345678",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 4. Get Buyer Profile by ID
+**GET** `/buyers/:buyerId`
+
+Retrieves a specific buyer profile by ID.
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "minimumBudget": 500000,
+    "maximumBudget": 2000000,
+    "preApproved": false,
+    "preApprovalAmount": null,
+    "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+    "propertyType": "HOUSE",
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+2348012345678",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 5. Update Buyer Profile
+**PUT** `/buyers/:buyerId`
+
+Updates a buyer profile. Only the profile owner or admin can update.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "minimumBudget": 600000,
+  "maximumBudget": 2500000,
+  "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi", "Banana Island"],
+  "propertyType": "CONDO"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "minimumBudget": 600000,
+    "maximumBudget": 2500000,
+    "preApproved": false,
+    "preApprovalAmount": null,
+    "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi", "Banana Island"],
+    "propertyType": "CONDO",
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+2348012345678",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 6. Delete Buyer Profile
+**DELETE** `/buyers/:buyerId`
+
+Deletes a buyer profile. Only the profile owner or admin can delete.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Buyer profile deleted successfully"
+  }
+}
+```
+
+### 7. Update Pre-Approval Status
+**PATCH** `/buyers/:buyerId/pre-approval`
+
+Updates the pre-approval status and amount for a buyer.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "preApproved": true,
+  "preApprovalAmount": 1800000
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "minimumBudget": 500000,
+    "maximumBudget": 2000000,
+    "preApproved": true,
+    "preApprovalAmount": 1800000,
+    "preferredLocations": ["Lekki", "Victoria Island", "Ikoyi"],
+    "propertyType": "HOUSE",
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john@example.com",
+      "phoneNumber": "+2348012345678",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 8. Search Properties for Buyer
+**GET** `/buyers/:buyerId/properties`
+
+Searches for properties that match the buyer's criteria.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "buyerId": "uuid-here",
+    "properties": [
+      {
+        "propertyId": "prop-1",
+        "title": "Beautiful 3-bedroom house",
+        "price": 2500000,
+        "location": "Lekki, Lagos",
+        "propertyType": "HOUSE",
+        "bedrooms": 3,
+        "bathrooms": 2,
+        "area": "200 sqm"
+      }
+    ],
+    "totalProperties": 1
+  }
+}
+```
+
+## Realtor Profile APIs
+
+### 1. Create Realtor Profile
+**POST** `/realtors`
+
+Creates a new realtor profile for the authenticated user.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "licenseNumber": "REALTOR123456",
+  "brokerageName": "Elite Real Estate",
+  "yearsOfExperience": 8,
+  "specialties": ["Residential", "Commercial", "Luxury"],
+  "certifications": ["Certified Residential Specialist", "Accredited Buyer's Representative"],
+  "verificationDocsUrls": [
+    "https://cloudinary.com/license.jpg",
+    "https://cloudinary.com/certification.jpg"
+  ]
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Elite Real Estate",
+    "yearsOfExperience": 8,
+    "specialties": ["Residential", "Commercial", "Luxury"],
+    "certifications": ["Certified Residential Specialist", "Accredited Buyer's Representative"],
+    "verificationDocsUrls": [
+      "https://cloudinary.com/license.jpg",
+      "https://cloudinary.com/certification.jpg"
+    ],
+    "isVerified": false,
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane@example.com",
+      "phoneNumber": "+2348012345679",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 2. Get All Realtors
+**GET** `/realtors`
+
+Retrieves all realtor profiles with pagination, search, and filters.
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `search` (optional): Search by name, email, or brokerage name
+- `specialty` (optional): Filter by specialty
+- `isVerified` (optional): Filter by verification status (true/false)
+
+**Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "realtorId": "uuid-here",
+      "licenseNumber": "REALTOR123456",
+      "brokerageName": "Elite Real Estate",
+      "yearsOfExperience": 8,
+      "specialties": ["Residential", "Commercial", "Luxury"],
+      "certifications": ["Certified Residential Specialist", "Accredited Buyer's Representative"],
+      "verificationDocsUrls": [
+        "https://cloudinary.com/license.jpg",
+        "https://cloudinary.com/certification.jpg"
+      ],
+      "isVerified": false,
+      "user": {
+        "userId": "user-uuid",
+        "firstName": "Jane",
+        "lastName": "Smith",
+        "email": "jane@example.com",
+        "phoneNumber": "+2348012345679",
+        "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+      }
+    }
+  ],
+  "pagination": {
+    "currentPage": 1,
+    "pageSize": 10,
+    "totalRealtors": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### 3. Get My Realtor Profile
+**GET** `/realtors/me`
+
+Retrieves the authenticated user's realtor profile.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Elite Real Estate",
+    "yearsOfExperience": 8,
+    "specialties": ["Residential", "Commercial", "Luxury"],
+    "certifications": ["Certified Residential Specialist", "Accredited Buyer's Representative"],
+    "verificationDocsUrls": [
+      "https://cloudinary.com/license.jpg",
+      "https://cloudinary.com/certification.jpg"
+    ],
+    "isVerified": false,
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane@example.com",
+      "phoneNumber": "+2348012345679",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 4. Get Realtor Profile by ID
+**GET** `/realtors/:realtorId`
+
+Retrieves a specific realtor profile by ID.
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Elite Real Estate",
+    "yearsOfExperience": 8,
+    "specialties": ["Residential", "Commercial", "Luxury"],
+    "certifications": ["Certified Residential Specialist", "Accredited Buyer's Representative"],
+    "verificationDocsUrls": [
+      "https://cloudinary.com/license.jpg",
+      "https://cloudinary.com/certification.jpg"
+    ],
+    "isVerified": false,
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane@example.com",
+      "phoneNumber": "+2348012345679",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 5. Update Realtor Profile
+**PUT** `/realtors/:realtorId`
+
+Updates a realtor profile. Only the profile owner or admin can update.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "brokerageName": "Premium Elite Real Estate",
+  "yearsOfExperience": 10,
+  "specialties": ["Residential", "Commercial", "Luxury", "Investment"],
+  "certifications": [
+    "Certified Residential Specialist",
+    "Accredited Buyer's Representative",
+    "Certified Luxury Home Specialist"
+  ]
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Premium Elite Real Estate",
+    "yearsOfExperience": 10,
+    "specialties": ["Residential", "Commercial", "Luxury", "Investment"],
+    "certifications": [
+      "Certified Residential Specialist",
+      "Accredited Buyer's Representative",
+      "Certified Luxury Home Specialist"
+    ],
+    "verificationDocsUrls": [
+      "https://cloudinary.com/license.jpg",
+      "https://cloudinary.com/certification.jpg"
+    ],
+    "isVerified": false,
+    "user": {
+      "userId": "user-uuid",
+      "firstName": "Jane",
+      "lastName": "Smith",
+      "email": "jane@example.com",
+      "phoneNumber": "+2348012345679",
+      "profilePictureUrl": "https://cloudinary.com/profile.jpg"
+    }
+  }
+}
+```
+
+### 6. Delete Realtor Profile
+**DELETE** `/realtors/:realtorId`
+
+Deletes a realtor profile. Only the profile owner or admin can delete.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "message": "Realtor profile deleted successfully"
+  }
+}
+```
+
+### 7. Verify Realtor (Admin Only)
+**PATCH** `/realtors/:realtorId/verify`
+
+Verifies or unverifies a realtor. Only admins can perform this action.
+
+**Headers:**
+```
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "verified": true
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Elite Real Estate",
+    "isVerified": true,
+    "message": "Realtor verified successfully"
+  }
+}
+```
+
+### 8. Upload Verification Documents
+**POST** `/realtors/:realtorId/documents`
+
+Uploads verification documents for a realtor profile.
+
+**Headers:**
+```
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+```
+
+**Request Body:**
+```
+Form data with files
+```
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "verificationDocsUrls": [
+      "https://cloudinary.com/license.jpg",
+      "https://cloudinary.com/certification.jpg",
+      "https://cloudinary.com/new-doc3.jpg"
+    ],
+    "message": "Verification documents uploaded successfully"
+  }
+}
+```
+
+### 9. Get Realtor Statistics
+**GET** `/realtors/:realtorId/stats`
+
+Retrieves statistics for a specific realtor.
+
+**Response (200 OK):**
+```json
+{
+  "data": {
+    "realtorId": "uuid-here",
+    "licenseNumber": "REALTOR123456",
+    "brokerageName": "Elite Real Estate",
+    "yearsOfExperience": 8,
+    "stats": {
+      "totalPropertiesSold": 25,
+      "totalSalesValue": 15000000,
+      "averageDaysOnMarket": 45,
+      "clientSatisfactionScore": 4.8,
+      "currentListings": 8,
+      "monthlyCommission": 250000
+    }
+  }
+}
+```
+
 ## Notes
 
 1. **Authentication**: Most endpoints require a valid JWT token in the Authorization header.

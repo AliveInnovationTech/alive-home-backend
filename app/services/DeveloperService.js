@@ -1,7 +1,17 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
-const { User, Developer } = sequelize.models;
+
+// Wait for models to be loaded
+const getModels = () => {
+    if (!sequelize.models.User || !sequelize.models.Developer) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User,
+        Developer: sequelize.models.Developer
+    };
+};
 const developerValidator = require("../validators/DeveloperValidator");
 
 exports.createDeveloperProfile = async (payload, user) => {
@@ -14,6 +24,8 @@ exports.createDeveloperProfile = async (payload, user) => {
             };
         }
 
+        const { User, Developer } = getModels();
+        
         // Check if user already has a developer profile
         const existingDeveloper = await Developer.findOne({
             where: { userId: user.userId }
@@ -75,6 +87,8 @@ exports.createDeveloperProfile = async (payload, user) => {
 
 exports.getDeveloperProfile = async (developerId) => {
     try {
+        const { User, Developer } = getModels();
+        
         const developer = await Developer.findByPk(developerId, {
             include: [
                 {
@@ -127,6 +141,8 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
             };
         }
 
+        const { User, Developer } = getModels();
+        
         const developer = await Developer.findByPk(developerId);
         if (!developer) {
             return {
@@ -194,6 +210,8 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
 
 exports.getAllDevelopers = async (page = 1, limit = 10, search = '') => {
     try {
+        const { User, Developer } = getModels();
+        
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -254,6 +272,8 @@ exports.getAllDevelopers = async (page = 1, limit = 10, search = '') => {
 
 exports.deleteDeveloperProfile = async (developerId, user) => {
     try {
+        const { User, Developer } = getModels();
+        
         const developer = await Developer.findByPk(developerId);
         if (!developer) {
             return {
@@ -290,6 +310,8 @@ exports.deleteDeveloperProfile = async (developerId, user) => {
 
 exports.verifyDeveloper = async (developerId, verified, user) => {
     try {
+        const { User, Developer } = getModels();
+        
         // Only admins can verify developers
         if (user.role !== 'ADMIN') {
             return {
@@ -329,6 +351,8 @@ exports.verifyDeveloper = async (developerId, verified, user) => {
 
 exports.getMyDeveloperProfile = async (userId) => {
     try {
+        const { User, Developer } = getModels();
+        
         const developer = await Developer.findOne({
             where: { userId },
             include: [
