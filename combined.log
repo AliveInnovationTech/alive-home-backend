@@ -359,3 +359,540 @@
 {"level":"info","message":"🔄 Database schema synchronized (alter mode)","timestamp":"2025-08-11T21:33:55.000Z"}
 {"level":"info","message":"✅ Database connection established","timestamp":"2025-08-11T21:41:56.224Z"}
 {"level":"info","message":"🔄 Database schema synchronized (alter mode)","timestamp":"2025-08-11T21:41:56.719Z"}
+{"level":"info","message":"🌱 Starting permissions and roles seeding...","timestamp":"2025-08-12T23:06:58.133Z"}
+{"level":"info","message":"✅ Database connection established","timestamp":"2025-08-12T23:07:07.578Z"}
+{"level":"info","message":"📝 Creating permissions...","timestamp":"2025-08-12T23:07:07.606Z"}
+{"errors":[{"instance":{"category":"general","createdAt":"2025-08-12T23:07:07.819Z","description":"Can read their own user profile","isActive":true,"name":"profile:read:self","permissionId":"b055bc0f-cbb9-410d-a7f8-53368ac769c7","updatedAt":"2025-08-12T23:07:07.819Z"},"message":"Permission name must be lowercase with underscores","origin":"FUNCTION","original":{"validatorArgs":[{}],"validatorName":"is"},"path":"name","type":"Validation error","validatorArgs":[{}],"validatorKey":"is","validatorName":"is","value":"profile:read:self"}],"level":"error","message":"❌ Permissions and roles seeding failed: Validation error: Permission name must be lowercase with underscores","name":"SequelizeValidationError","stack":"SequelizeValidationError: Validation error: Permission name must be lowercase with underscores\n    at InstanceValidator._validate (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:50:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async InstanceValidator._validateAndRunHooks (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:60:7)\n    at async InstanceValidator.validate (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:54:12)\n    at async Permission.save (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/model.js:2426:7)\n    at async Permission.create (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/model.js:1362:12)\n    at async seedPermissionsAndRoles (/Users/abba/Desktop/alive-home-backend/lib/seed-permissions.js:62:30)","timestamp":"2025-08-12T23:07:07.821Z"}
+{"level":"info","message":"🌱 Starting permissions and roles seeding...","timestamp":"2025-08-12T23:09:30.008Z"}
+{"level":"info","message":"✅ Database connection established","timestamp":"2025-08-12T23:09:34.568Z"}
+{"level":"info","message":"📝 Creating permissions...","timestamp":"2025-08-12T23:09:34.584Z"}
+{"level":"info","message":"✅ Created permission: profile_read_self","timestamp":"2025-08-12T23:09:34.987Z"}
+{"level":"info","message":"✅ Created permission: profile_update_self","timestamp":"2025-08-12T23:09:35.365Z"}
+{"level":"info","message":"✅ Created permission: profile_delete_self","timestamp":"2025-08-12T23:09:35.740Z"}
+{"level":"info","message":"✅ Created permission: profile_upload_media_self","timestamp":"2025-08-12T23:09:36.100Z"}
+{"level":"info","message":"✅ Created permission: profile_upload_document_self","timestamp":"2025-08-12T23:09:36.484Z"}
+{"level":"info","message":"✅ Created permission: property_create","timestamp":"2025-08-12T23:09:36.865Z"}
+{"level":"info","message":"✅ Created permission: property_read_published","timestamp":"2025-08-12T23:09:37.370Z"}
+{"level":"info","message":"✅ Created permission: property_update_own","timestamp":"2025-08-12T23:09:37.745Z"}
+{"level":"info","message":"✅ Created permission: property_delete_own","timestamp":"2025-08-12T23:09:38.136Z"}
+{"level":"info","message":"✅ Created permission: property_upload_media_own","timestamp":"2025-08-12T23:09:38.608Z"}
+{"level":"info","message":"✅ Created permission: property_upload_document_own","timestamp":"2025-08-12T23:09:38.980Z"}
+{"level":"info","message":"✅ Created permission: property_read_own","timestamp":"2025-08-12T23:09:39.339Z"}
+{"level":"info","message":"✅ Created permission: interest_create","timestamp":"2025-08-12T23:09:39.736Z"}
+{"level":"info","message":"✅ Created permission: appointment_create","timestamp":"2025-08-12T23:09:40.107Z"}
+{"level":"info","message":"✅ Created permission: appointment_cancel_own","timestamp":"2025-08-12T23:09:40.465Z"}
+{"level":"info","message":"✅ Created permission: chat_initiate","timestamp":"2025-08-12T23:09:40.845Z"}
+{"level":"info","message":"✅ Created permission: chat_read","timestamp":"2025-08-12T23:09:41.212Z"}
+{"level":"info","message":"✅ Created permission: chat_send","timestamp":"2025-08-12T23:09:41.560Z"}
+{"level":"info","message":"✅ Created permission: chat_delete_own","timestamp":"2025-08-12T23:09:41.935Z"}
+{"level":"info","message":"✅ Created permission: chat_reply_own","timestamp":"2025-08-12T23:09:42.350Z"}
+{"level":"info","message":"✅ Created permission: chat_edit_own","timestamp":"2025-08-12T23:09:42.721Z"}
+{"level":"info","message":"✅ Created permission: chat_archive_own","timestamp":"2025-08-12T23:09:43.093Z"}
+{"level":"info","message":"✅ Created permission: chat_unarchive_own","timestamp":"2025-08-12T23:09:43.518Z"}
+{"level":"info","message":"✅ Created permission: call_initiate","timestamp":"2025-08-12T23:09:43.882Z"}
+{"level":"info","message":"✅ Created permission: call_join","timestamp":"2025-08-12T23:09:44.249Z"}
+{"level":"info","message":"✅ Created permission: call_leave","timestamp":"2025-08-12T23:09:44.612Z"}
+{"level":"info","message":"✅ Created permission: call_mute_own","timestamp":"2025-08-12T23:09:44.982Z"}
+{"level":"info","message":"✅ Created permission: call_unmute_own","timestamp":"2025-08-12T23:09:45.349Z"}
+{"level":"info","message":"✅ Created permission: video_call_initiate","timestamp":"2025-08-12T23:09:45.721Z"}
+{"level":"info","message":"✅ Created permission: video_call_join","timestamp":"2025-08-12T23:09:46.185Z"}
+{"level":"info","message":"✅ Created permission: video_call_leave","timestamp":"2025-08-12T23:09:46.540Z"}
+{"level":"info","message":"✅ Created permission: vr_ar","timestamp":"2025-08-12T23:09:46.908Z"}
+{"level":"info","message":"✅ Created permission: property_share","timestamp":"2025-08-12T23:09:47.290Z"}
+{"level":"info","message":"✅ Created permission: appointment_confirm_own","timestamp":"2025-08-12T23:09:47.653Z"}
+{"level":"info","message":"✅ Created permission: appointment_read_own","timestamp":"2025-08-12T23:09:48.019Z"}
+{"level":"info","message":"✅ Created permission: leads_read_own","timestamp":"2025-08-12T23:09:48.375Z"}
+{"level":"info","message":"✅ Created permission: chat_read_own","timestamp":"2025-08-12T23:09:48.744Z"}
+{"level":"info","message":"✅ Created permission: chat_send_own","timestamp":"2025-08-12T23:09:49.104Z"}
+{"level":"info","message":"✅ Found existing permission: chat_delete_own","timestamp":"2025-08-12T23:09:49.295Z"}
+{"level":"info","message":"✅ Found existing permission: chat_reply_own","timestamp":"2025-08-12T23:09:49.487Z"}
+{"level":"info","message":"✅ Found existing permission: chat_edit_own","timestamp":"2025-08-12T23:09:49.664Z"}
+{"level":"info","message":"✅ Found existing permission: chat_archive_own","timestamp":"2025-08-12T23:09:49.844Z"}
+{"level":"info","message":"✅ Found existing permission: chat_unarchive_own","timestamp":"2025-08-12T23:09:50.036Z"}
+{"level":"info","message":"✅ Created permission: call_read_own","timestamp":"2025-08-12T23:09:50.395Z"}
+{"level":"info","message":"✅ Created permission: call_send_own","timestamp":"2025-08-12T23:09:50.773Z"}
+{"level":"info","message":"✅ Created permission: call_delete_own","timestamp":"2025-08-12T23:09:51.139Z"}
+{"level":"info","message":"✅ Created permission: call_reply_own","timestamp":"2025-08-12T23:09:51.494Z"}
+{"level":"info","message":"✅ Created permission: call_edit_own","timestamp":"2025-08-12T23:09:51.850Z"}
+{"level":"info","message":"✅ Created permission: call_archive_own","timestamp":"2025-08-12T23:09:52.209Z"}
+{"level":"info","message":"✅ Created permission: call_unarchive_own","timestamp":"2025-08-12T23:09:52.558Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar","timestamp":"2025-08-12T23:09:52.728Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_interact_own","timestamp":"2025-08-12T23:09:53.102Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_edit_own","timestamp":"2025-08-12T23:09:53.473Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_delete_own","timestamp":"2025-08-12T23:09:53.861Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_create_own","timestamp":"2025-08-12T23:09:54.216Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_share_own","timestamp":"2025-08-12T23:09:54.595Z"}
+{"level":"info","message":"✅ Created permission: vr_ar_upload_own","timestamp":"2025-08-12T23:09:54.960Z"}
+{"level":"info","message":"✅ Created permission: subscriptions_manage_own","timestamp":"2025-08-12T23:09:55.309Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_analytics_own","timestamp":"2025-08-12T23:09:55.660Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_market_insights","timestamp":"2025-08-12T23:09:56.014Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_performance_own","timestamp":"2025-08-12T23:09:56.388Z"}
+{"level":"info","message":"✅ Created permission: dashboard_manage_notifications","timestamp":"2025-08-12T23:09:56.760Z"}
+{"level":"info","message":"✅ Created permission: dashboard_manage_settings","timestamp":"2025-08-12T23:09:57.105Z"}
+{"level":"info","message":"✅ Created permission: dashboard_manage_subscriptions","timestamp":"2025-08-12T23:09:57.501Z"}
+{"level":"info","message":"✅ Created permission: dashboard_manage_payments","timestamp":"2025-08-12T23:09:57.860Z"}
+{"level":"info","message":"✅ Created permission: dashboard_manage_billing","timestamp":"2025-08-12T23:09:58.207Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_premium_features","timestamp":"2025-08-12T23:09:58.573Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_support","timestamp":"2025-08-12T23:09:58.937Z"}
+{"level":"info","message":"✅ Created permission: dashboard_view_usage_own","timestamp":"2025-08-12T23:09:59.298Z"}
+{"level":"info","message":"✅ Created permission: admin_user_read_all","timestamp":"2025-08-12T23:09:59.642Z"}
+{"level":"info","message":"✅ Created permission: admin_user_update_any","timestamp":"2025-08-12T23:10:00.080Z"}
+{"level":"info","message":"✅ Created permission: admin_user_verify","timestamp":"2025-08-12T23:10:00.431Z"}
+{"level":"info","message":"✅ Created permission: admin_user_suspend","timestamp":"2025-08-12T23:10:00.795Z"}
+{"level":"info","message":"✅ Created permission: admin_property_read_any","timestamp":"2025-08-12T23:10:01.149Z"}
+{"level":"info","message":"✅ Created permission: admin_property_update_any","timestamp":"2025-08-12T23:10:01.550Z"}
+{"level":"info","message":"✅ Created permission: admin_property_delete_any","timestamp":"2025-08-12T23:10:01.914Z"}
+{"level":"info","message":"✅ Created permission: admin_property_verify","timestamp":"2025-08-12T23:10:02.292Z"}
+{"level":"info","message":"✅ Created permission: admin_dashboard_view_platform_analytics","timestamp":"2025-08-12T23:10:02.665Z"}
+{"level":"info","message":"✅ Created permission: admin_dashboard_manage_users","timestamp":"2025-08-12T23:10:03.045Z"}
+{"level":"info","message":"✅ Created permission: admin_dashboard_manage_properties","timestamp":"2025-08-12T23:10:03.413Z"}
+{"level":"info","message":"✅ Created permission: admin_dashboard_manage_analytics","timestamp":"2025-08-12T23:10:03.775Z"}
+{"level":"info","message":"✅ Created permission: admin_dashboard_manage_reports","timestamp":"2025-08-12T23:10:04.187Z"}
+{"level":"info","message":"✅ Created permission: superadmin_role_create","timestamp":"2025-08-12T23:10:04.550Z"}
+{"level":"info","message":"✅ Created permission: superadmin_role_update","timestamp":"2025-08-12T23:10:04.928Z"}
+{"level":"info","message":"✅ Created permission: superadmin_role_delete","timestamp":"2025-08-12T23:10:05.338Z"}
+{"level":"info","message":"✅ Created permission: superadmin_permission_assign","timestamp":"2025-08-12T23:10:05.710Z"}
+{"level":"info","message":"✅ Created permission: superadmin_user_impersonate","timestamp":"2025-08-12T23:10:06.071Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_config","timestamp":"2025-08-12T23:10:06.457Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_monitor","timestamp":"2025-08-12T23:10:06.826Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_backup","timestamp":"2025-08-12T23:10:07.190Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_restore","timestamp":"2025-08-12T23:10:07.551Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_logs","timestamp":"2025-08-12T23:10:07.914Z"}
+{"level":"info","message":"✅ Created permission: superadmin_system_users","timestamp":"2025-08-12T23:10:08.268Z"}
+{"level":"info","message":"👥 Creating roles with permissions...","timestamp":"2025-08-12T23:10:08.269Z"}
+{"level":"info","message":"✅ Found existing role: BUYER","timestamp":"2025-08-12T23:10:08.445Z"}
+{"level":"info","message":"🌱 Starting permissions and roles seeding...","timestamp":"2025-08-12T23:10:24.518Z"}
+{"level":"info","message":"✅ Database connection established","timestamp":"2025-08-12T23:10:28.241Z"}
+{"level":"info","message":"📝 Creating permissions...","timestamp":"2025-08-12T23:10:28.266Z"}
+{"level":"info","message":"✅ Found existing permission: profile_read_self","timestamp":"2025-08-12T23:10:28.452Z"}
+{"level":"info","message":"✅ Found existing permission: profile_update_self","timestamp":"2025-08-12T23:10:28.636Z"}
+{"level":"info","message":"✅ Found existing permission: profile_delete_self","timestamp":"2025-08-12T23:10:28.832Z"}
+{"level":"info","message":"✅ Found existing permission: profile_upload_media_self","timestamp":"2025-08-12T23:10:29.006Z"}
+{"level":"info","message":"✅ Found existing permission: profile_upload_document_self","timestamp":"2025-08-12T23:10:29.191Z"}
+{"level":"info","message":"✅ Found existing permission: property_create","timestamp":"2025-08-12T23:10:29.389Z"}
+{"level":"info","message":"✅ Found existing permission: property_read_published","timestamp":"2025-08-12T23:10:29.607Z"}
+{"level":"info","message":"✅ Found existing permission: property_update_own","timestamp":"2025-08-12T23:10:29.810Z"}
+{"level":"info","message":"✅ Found existing permission: property_delete_own","timestamp":"2025-08-12T23:10:29.996Z"}
+{"level":"info","message":"✅ Found existing permission: property_upload_media_own","timestamp":"2025-08-12T23:10:30.188Z"}
+{"level":"info","message":"✅ Found existing permission: property_upload_document_own","timestamp":"2025-08-12T23:10:30.395Z"}
+{"level":"info","message":"✅ Found existing permission: property_read_own","timestamp":"2025-08-12T23:10:30.570Z"}
+{"level":"info","message":"✅ Found existing permission: interest_create","timestamp":"2025-08-12T23:10:30.748Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_create","timestamp":"2025-08-12T23:10:30.941Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_cancel_own","timestamp":"2025-08-12T23:10:31.120Z"}
+{"level":"info","message":"✅ Found existing permission: chat_initiate","timestamp":"2025-08-12T23:10:31.312Z"}
+{"level":"info","message":"✅ Found existing permission: chat_read","timestamp":"2025-08-12T23:10:31.495Z"}
+{"level":"info","message":"✅ Found existing permission: chat_send","timestamp":"2025-08-12T23:10:31.681Z"}
+{"level":"info","message":"✅ Found existing permission: chat_delete_own","timestamp":"2025-08-12T23:10:31.856Z"}
+{"level":"info","message":"✅ Found existing permission: chat_reply_own","timestamp":"2025-08-12T23:10:32.089Z"}
+{"level":"info","message":"✅ Found existing permission: chat_edit_own","timestamp":"2025-08-12T23:10:32.267Z"}
+{"level":"info","message":"✅ Found existing permission: chat_archive_own","timestamp":"2025-08-12T23:10:32.449Z"}
+{"level":"info","message":"✅ Found existing permission: chat_unarchive_own","timestamp":"2025-08-12T23:10:32.626Z"}
+{"level":"info","message":"✅ Found existing permission: call_initiate","timestamp":"2025-08-12T23:10:32.805Z"}
+{"level":"info","message":"✅ Found existing permission: call_join","timestamp":"2025-08-12T23:10:32.992Z"}
+{"level":"info","message":"✅ Found existing permission: call_leave","timestamp":"2025-08-12T23:10:33.180Z"}
+{"level":"info","message":"✅ Found existing permission: call_mute_own","timestamp":"2025-08-12T23:10:33.364Z"}
+{"level":"info","message":"✅ Found existing permission: call_unmute_own","timestamp":"2025-08-12T23:10:33.550Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_initiate","timestamp":"2025-08-12T23:10:33.740Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_join","timestamp":"2025-08-12T23:10:33.931Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_leave","timestamp":"2025-08-12T23:10:34.115Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar","timestamp":"2025-08-12T23:10:34.295Z"}
+{"level":"info","message":"✅ Found existing permission: property_share","timestamp":"2025-08-12T23:10:34.478Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_confirm_own","timestamp":"2025-08-12T23:10:34.656Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_read_own","timestamp":"2025-08-12T23:10:34.832Z"}
+{"level":"info","message":"✅ Found existing permission: leads_read_own","timestamp":"2025-08-12T23:10:35.010Z"}
+{"level":"info","message":"✅ Found existing permission: chat_read_own","timestamp":"2025-08-12T23:10:35.190Z"}
+{"level":"info","message":"✅ Found existing permission: chat_send_own","timestamp":"2025-08-12T23:10:35.378Z"}
+{"level":"info","message":"✅ Found existing permission: chat_delete_own","timestamp":"2025-08-12T23:10:35.541Z"}
+{"level":"info","message":"✅ Found existing permission: chat_reply_own","timestamp":"2025-08-12T23:10:35.723Z"}
+{"level":"info","message":"✅ Found existing permission: chat_edit_own","timestamp":"2025-08-12T23:10:35.895Z"}
+{"level":"info","message":"✅ Found existing permission: chat_archive_own","timestamp":"2025-08-12T23:10:36.075Z"}
+{"level":"info","message":"✅ Found existing permission: chat_unarchive_own","timestamp":"2025-08-12T23:10:36.252Z"}
+{"level":"info","message":"✅ Found existing permission: call_read_own","timestamp":"2025-08-12T23:10:36.428Z"}
+{"level":"info","message":"✅ Found existing permission: call_send_own","timestamp":"2025-08-12T23:10:36.603Z"}
+{"level":"info","message":"✅ Found existing permission: call_delete_own","timestamp":"2025-08-12T23:10:36.772Z"}
+{"level":"info","message":"✅ Found existing permission: call_reply_own","timestamp":"2025-08-12T23:10:36.936Z"}
+{"level":"info","message":"✅ Found existing permission: call_edit_own","timestamp":"2025-08-12T23:10:37.115Z"}
+{"level":"info","message":"✅ Found existing permission: call_archive_own","timestamp":"2025-08-12T23:10:37.291Z"}
+{"level":"info","message":"✅ Found existing permission: call_unarchive_own","timestamp":"2025-08-12T23:10:37.468Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar","timestamp":"2025-08-12T23:10:37.658Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_interact_own","timestamp":"2025-08-12T23:10:37.835Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_edit_own","timestamp":"2025-08-12T23:10:38.011Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_delete_own","timestamp":"2025-08-12T23:10:38.193Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_create_own","timestamp":"2025-08-12T23:10:38.373Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_share_own","timestamp":"2025-08-12T23:10:38.571Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_upload_own","timestamp":"2025-08-12T23:10:38.776Z"}
+{"level":"info","message":"✅ Found existing permission: subscriptions_manage_own","timestamp":"2025-08-12T23:10:38.948Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_analytics_own","timestamp":"2025-08-12T23:10:39.134Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_market_insights","timestamp":"2025-08-12T23:10:39.312Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_performance_own","timestamp":"2025-08-12T23:10:39.494Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_notifications","timestamp":"2025-08-12T23:10:39.678Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_settings","timestamp":"2025-08-12T23:10:39.911Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_subscriptions","timestamp":"2025-08-12T23:10:40.090Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_payments","timestamp":"2025-08-12T23:10:40.266Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_billing","timestamp":"2025-08-12T23:10:40.448Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_premium_features","timestamp":"2025-08-12T23:10:40.626Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_support","timestamp":"2025-08-12T23:10:40.800Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_usage_own","timestamp":"2025-08-12T23:10:40.988Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_read_all","timestamp":"2025-08-12T23:10:41.178Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_update_any","timestamp":"2025-08-12T23:10:41.378Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_verify","timestamp":"2025-08-12T23:10:41.555Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_suspend","timestamp":"2025-08-12T23:10:41.739Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_read_any","timestamp":"2025-08-12T23:10:41.919Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_update_any","timestamp":"2025-08-12T23:10:42.095Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_delete_any","timestamp":"2025-08-12T23:10:42.275Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_verify","timestamp":"2025-08-12T23:10:42.460Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_view_platform_analytics","timestamp":"2025-08-12T23:10:42.635Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_users","timestamp":"2025-08-12T23:10:42.816Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_properties","timestamp":"2025-08-12T23:10:42.995Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_analytics","timestamp":"2025-08-12T23:10:43.175Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_reports","timestamp":"2025-08-12T23:10:43.345Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_create","timestamp":"2025-08-12T23:10:43.541Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_update","timestamp":"2025-08-12T23:10:43.737Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_delete","timestamp":"2025-08-12T23:10:43.920Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_permission_assign","timestamp":"2025-08-12T23:10:44.100Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_user_impersonate","timestamp":"2025-08-12T23:10:44.276Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_config","timestamp":"2025-08-12T23:10:44.465Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_monitor","timestamp":"2025-08-12T23:10:44.641Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_backup","timestamp":"2025-08-12T23:10:44.820Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_restore","timestamp":"2025-08-12T23:10:45.026Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_logs","timestamp":"2025-08-12T23:10:45.218Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_users","timestamp":"2025-08-12T23:10:45.395Z"}
+{"level":"info","message":"👥 Creating roles with permissions...","timestamp":"2025-08-12T23:10:45.396Z"}
+{"level":"info","message":"✅ Found existing role: BUYER","timestamp":"2025-08-12T23:10:45.575Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.575Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.576Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.576Z"}
+{"level":"warn","message":"⚠️ Error assigning permission interest_create to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.576Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_create to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.576Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_cancel_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.576Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_initiate to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_read to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_send to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_delete_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_reply_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_edit_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.577Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_archive_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_unarchive_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_initiate to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_join to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_leave to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_mute_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_unmute_own to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_initiate to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.578Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_join to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.579Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_leave to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.579Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.579Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_share to role BUYER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.579Z"}
+{"level":"info","message":"✅ Found existing role: HOMEOWNER","timestamp":"2025-08-12T23:10:45.747Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.747Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.747Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.747Z"}
+{"level":"warn","message":"⚠️ Error assigning permission interest_create to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_create to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_cancel_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_initiate to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_create to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_update_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_delete_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_media_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_document_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.748Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_confirm_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_read_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission leads_read_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_analytics_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_market_insights to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_performance_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_notifications to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_settings to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_subscriptions to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_payments to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_billing to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.749Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_premium_features to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.750Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_support to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.750Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_usage_own to role HOMEOWNER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.750Z"}
+{"level":"info","message":"✅ Found existing role: REALTOR","timestamp":"2025-08-12T23:10:45.948Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.948Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.948Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.949Z"}
+{"level":"warn","message":"⚠️ Error assigning permission interest_create to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.949Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_create to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.949Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_cancel_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.949Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_initiate to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.949Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_create to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_update_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_delete_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_media_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_document_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_confirm_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.950Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_read_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission leads_read_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_analytics_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_market_insights to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_performance_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_notifications to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.951Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_settings to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_subscriptions to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_payments to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_billing to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_premium_features to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_support to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_usage_own to role REALTOR: role.addPermission is not a function","timestamp":"2025-08-12T23:10:45.952Z"}
+{"level":"info","message":"✅ Found existing role: DEVELOPER","timestamp":"2025-08-12T23:10:46.246Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.246Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission interest_create to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_create to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_cancel_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_initiate to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_create to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_update_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.247Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_delete_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_media_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_document_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_confirm_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_read_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission leads_read_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_analytics_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_market_insights to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_performance_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.248Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_notifications to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_settings to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_subscriptions to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_payments to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_billing to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_premium_features to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_support to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_usage_own to role DEVELOPER: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.249Z"}
+{"level":"info","message":"✅ Found existing role: ADMIN","timestamp":"2025-08-12T23:10:46.425Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.426Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.426Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.426Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_read_all to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.426Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_update_any to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.426Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_verify to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_suspend to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_read_any to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_update_any to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_delete_any to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_verify to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_view_platform_analytics to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_users to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_properties to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_analytics to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_reports to role ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.427Z"}
+{"level":"warn","message":"⚠️ Permission admin_dashboard_view_market_insights not found for role ADMIN","timestamp":"2025-08-12T23:10:46.428Z"}
+{"level":"warn","message":"⚠️ Permission admin_dashboard_view_usage_own not found for role ADMIN","timestamp":"2025-08-12T23:10:46.428Z"}
+{"level":"info","message":"✅ Created role: SUPER_ADMIN","timestamp":"2025-08-12T23:10:46.780Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_read_self to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.780Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_update_self to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.780Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_delete_self to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.780Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_upload_media_self to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.780Z"}
+{"level":"warn","message":"⚠️ Error assigning permission profile_upload_document_self to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_create to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_published to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_update_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_delete_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_media_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_upload_document_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_read_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission interest_create to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_create to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.781Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_cancel_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_initiate to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_read to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_send to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_delete_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_reply_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_edit_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_archive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_unarchive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_initiate to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.782Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_join to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_leave to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_mute_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_unmute_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_initiate to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_join to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission video_call_leave to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.783Z"}
+{"level":"warn","message":"⚠️ Error assigning permission property_share to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_confirm_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission appointment_read_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission leads_read_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_read_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_send_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_delete_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_reply_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_edit_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.784Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_archive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission chat_unarchive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_read_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_send_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_delete_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_reply_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_edit_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_archive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission call_unarchive_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_interact_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.785Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_edit_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_delete_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_create_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_share_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission vr_ar_upload_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission subscriptions_manage_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_analytics_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_market_insights to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_performance_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_notifications to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_settings to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_subscriptions to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.786Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_payments to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_manage_billing to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_premium_features to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_support to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission dashboard_view_usage_own to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_read_all to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_update_any to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_verify to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.787Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_user_suspend to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_read_any to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_update_any to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_delete_any to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_property_verify to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_view_platform_analytics to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_users to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_properties to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.788Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_analytics to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission admin_dashboard_manage_reports to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_role_create to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_role_update to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_role_delete to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_permission_assign to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.789Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_user_impersonate to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_config to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_monitor to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_backup to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_restore to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_logs to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"warn","message":"⚠️ Error assigning permission superadmin_system_users to role SUPER_ADMIN: role.addPermission is not a function","timestamp":"2025-08-12T23:10:46.790Z"}
+{"level":"info","message":"👑 Creating System Admin user...","timestamp":"2025-08-12T23:10:46.790Z"}
+{"errors":[{"instance":{"accountStatus":"pending","cloudinary_id":null,"createdAt":"2025-08-12T23:10:47.045Z","email":"alliveinnovationtech@gmail.com","emailVerifiedAt":null,"firstName":"Precious","isEmailVerified":false,"lastLoginAt":null,"lastLoginIp":null,"lastName":"Agamuyi","password":"$2a$10$W/ihPPi53ChgkN60nXB4GuFBV12WhbptkGyfhgXx8.vQKQnzEoTSC","phoneNumber":"+2347084176423","profilePictureUrl":null,"roleId":"d312e6fe-b334-4fbf-9bf2-02c95f88e720","updatedAt":"2025-08-12T23:10:47.045Z","userId":"5cec9347-893a-4fb5-8117-24009be966f9"},"message":"Password must be 8-15 characters","origin":"FUNCTION","original":{"validatorArgs":[8,15],"validatorName":"len"},"path":"password","type":"Validation error","validatorArgs":[8,15],"validatorKey":"len","validatorName":"len","value":"$2a$10$W/ihPPi53ChgkN60nXB4GuFBV12WhbptkGyfhgXx8.vQKQnzEoTSC"}],"level":"error","message":"❌ Permissions and roles seeding failed: Validation error: Password must be 8-15 characters","name":"SequelizeValidationError","stack":"SequelizeValidationError: Validation error: Password must be 8-15 characters\n    at InstanceValidator._validate (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:50:13)\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at async InstanceValidator._validateAndRunHooks (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:60:7)\n    at async InstanceValidator.validate (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/instance-validator.js:54:12)\n    at async User.save (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/model.js:2426:7)\n    at async User.create (/Users/abba/Desktop/alive-home-backend/node_modules/sequelize/lib/model.js:1362:12)\n    at async seedPermissionsAndRoles (/Users/abba/Desktop/alive-home-backend/lib/seed-permissions.js:123:27)","timestamp":"2025-08-12T23:10:47.047Z"}
+{"level":"info","message":"🌱 Starting permissions and roles seeding...","timestamp":"2025-08-12T23:11:15.297Z"}
+{"level":"info","message":"✅ Database connection established","timestamp":"2025-08-12T23:11:18.714Z"}
+{"level":"info","message":"📝 Creating permissions...","timestamp":"2025-08-12T23:11:18.731Z"}
+{"level":"info","message":"✅ Found existing permission: profile_read_self","timestamp":"2025-08-12T23:11:18.925Z"}
+{"level":"info","message":"✅ Found existing permission: profile_update_self","timestamp":"2025-08-12T23:11:19.115Z"}
+{"level":"info","message":"✅ Found existing permission: profile_delete_self","timestamp":"2025-08-12T23:11:19.310Z"}
+{"level":"info","message":"✅ Found existing permission: profile_upload_media_self","timestamp":"2025-08-12T23:11:19.527Z"}
+{"level":"info","message":"✅ Found existing permission: profile_upload_document_self","timestamp":"2025-08-12T23:11:19.712Z"}
+{"level":"info","message":"✅ Found existing permission: property_create","timestamp":"2025-08-12T23:11:19.895Z"}
+{"level":"info","message":"✅ Found existing permission: property_read_published","timestamp":"2025-08-12T23:11:20.081Z"}
+{"level":"info","message":"✅ Found existing permission: property_update_own","timestamp":"2025-08-12T23:11:20.267Z"}
+{"level":"info","message":"✅ Found existing permission: property_delete_own","timestamp":"2025-08-12T23:11:20.460Z"}
+{"level":"info","message":"✅ Found existing permission: property_upload_media_own","timestamp":"2025-08-12T23:11:20.689Z"}
+{"level":"info","message":"✅ Found existing permission: property_upload_document_own","timestamp":"2025-08-12T23:11:20.876Z"}
+{"level":"info","message":"✅ Found existing permission: property_read_own","timestamp":"2025-08-12T23:11:21.055Z"}
+{"level":"info","message":"✅ Found existing permission: interest_create","timestamp":"2025-08-12T23:11:21.240Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_create","timestamp":"2025-08-12T23:11:21.426Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_cancel_own","timestamp":"2025-08-12T23:11:21.615Z"}
+{"level":"info","message":"✅ Found existing permission: chat_initiate","timestamp":"2025-08-12T23:11:21.796Z"}
+{"level":"info","message":"✅ Found existing permission: chat_read","timestamp":"2025-08-12T23:11:21.986Z"}
+{"level":"info","message":"✅ Found existing permission: chat_send","timestamp":"2025-08-12T23:11:22.170Z"}
+{"level":"info","message":"✅ Found existing permission: chat_delete_own","timestamp":"2025-08-12T23:11:22.355Z"}
+{"level":"info","message":"✅ Found existing permission: chat_reply_own","timestamp":"2025-08-12T23:11:22.540Z"}
+{"level":"info","message":"✅ Found existing permission: chat_edit_own","timestamp":"2025-08-12T23:11:22.734Z"}
+{"level":"info","message":"✅ Found existing permission: chat_archive_own","timestamp":"2025-08-12T23:11:22.925Z"}
+{"level":"info","message":"✅ Found existing permission: chat_unarchive_own","timestamp":"2025-08-12T23:11:23.115Z"}
+{"level":"info","message":"✅ Found existing permission: call_initiate","timestamp":"2025-08-12T23:11:23.298Z"}
+{"level":"info","message":"✅ Found existing permission: call_join","timestamp":"2025-08-12T23:11:23.493Z"}
+{"level":"info","message":"✅ Found existing permission: call_leave","timestamp":"2025-08-12T23:11:23.682Z"}
+{"level":"info","message":"✅ Found existing permission: call_mute_own","timestamp":"2025-08-12T23:11:23.874Z"}
+{"level":"info","message":"✅ Found existing permission: call_unmute_own","timestamp":"2025-08-12T23:11:24.055Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_initiate","timestamp":"2025-08-12T23:11:24.249Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_join","timestamp":"2025-08-12T23:11:24.435Z"}
+{"level":"info","message":"✅ Found existing permission: video_call_leave","timestamp":"2025-08-12T23:11:24.646Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar","timestamp":"2025-08-12T23:11:24.836Z"}
+{"level":"info","message":"✅ Found existing permission: property_share","timestamp":"2025-08-12T23:11:25.020Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_confirm_own","timestamp":"2025-08-12T23:11:25.206Z"}
+{"level":"info","message":"✅ Found existing permission: appointment_read_own","timestamp":"2025-08-12T23:11:25.400Z"}
+{"level":"info","message":"✅ Found existing permission: leads_read_own","timestamp":"2025-08-12T23:11:25.580Z"}
+{"level":"info","message":"✅ Found existing permission: chat_read_own","timestamp":"2025-08-12T23:11:25.765Z"}
+{"level":"info","message":"✅ Found existing permission: chat_send_own","timestamp":"2025-08-12T23:11:25.977Z"}
+{"level":"info","message":"✅ Found existing permission: chat_delete_own","timestamp":"2025-08-12T23:11:26.166Z"}
+{"level":"info","message":"✅ Found existing permission: chat_reply_own","timestamp":"2025-08-12T23:11:26.351Z"}
+{"level":"info","message":"✅ Found existing permission: chat_edit_own","timestamp":"2025-08-12T23:11:26.554Z"}
+{"level":"info","message":"✅ Found existing permission: chat_archive_own","timestamp":"2025-08-12T23:11:26.753Z"}
+{"level":"info","message":"✅ Found existing permission: chat_unarchive_own","timestamp":"2025-08-12T23:11:26.936Z"}
+{"level":"info","message":"✅ Found existing permission: call_read_own","timestamp":"2025-08-12T23:11:27.140Z"}
+{"level":"info","message":"✅ Found existing permission: call_send_own","timestamp":"2025-08-12T23:11:27.344Z"}
+{"level":"info","message":"✅ Found existing permission: call_delete_own","timestamp":"2025-08-12T23:11:27.547Z"}
+{"level":"info","message":"✅ Found existing permission: call_reply_own","timestamp":"2025-08-12T23:11:27.738Z"}
+{"level":"info","message":"✅ Found existing permission: call_edit_own","timestamp":"2025-08-12T23:11:27.946Z"}
+{"level":"info","message":"✅ Found existing permission: call_archive_own","timestamp":"2025-08-12T23:11:28.130Z"}
+{"level":"info","message":"✅ Found existing permission: call_unarchive_own","timestamp":"2025-08-12T23:11:28.349Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar","timestamp":"2025-08-12T23:11:28.562Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_interact_own","timestamp":"2025-08-12T23:11:28.754Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_edit_own","timestamp":"2025-08-12T23:11:28.949Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_delete_own","timestamp":"2025-08-12T23:11:29.154Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_create_own","timestamp":"2025-08-12T23:11:29.340Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_share_own","timestamp":"2025-08-12T23:11:29.530Z"}
+{"level":"info","message":"✅ Found existing permission: vr_ar_upload_own","timestamp":"2025-08-12T23:11:29.718Z"}
+{"level":"info","message":"✅ Found existing permission: subscriptions_manage_own","timestamp":"2025-08-12T23:11:29.899Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_analytics_own","timestamp":"2025-08-12T23:11:30.078Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_market_insights","timestamp":"2025-08-12T23:11:30.273Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_performance_own","timestamp":"2025-08-12T23:11:30.463Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_notifications","timestamp":"2025-08-12T23:11:30.654Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_settings","timestamp":"2025-08-12T23:11:30.839Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_subscriptions","timestamp":"2025-08-12T23:11:31.051Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_payments","timestamp":"2025-08-12T23:11:31.249Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_manage_billing","timestamp":"2025-08-12T23:11:31.438Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_premium_features","timestamp":"2025-08-12T23:11:31.636Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_support","timestamp":"2025-08-12T23:11:31.818Z"}
+{"level":"info","message":"✅ Found existing permission: dashboard_view_usage_own","timestamp":"2025-08-12T23:11:31.998Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_read_all","timestamp":"2025-08-12T23:11:32.181Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_update_any","timestamp":"2025-08-12T23:11:32.378Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_verify","timestamp":"2025-08-12T23:11:32.580Z"}
+{"level":"info","message":"✅ Found existing permission: admin_user_suspend","timestamp":"2025-08-12T23:11:32.759Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_read_any","timestamp":"2025-08-12T23:11:32.946Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_update_any","timestamp":"2025-08-12T23:11:33.135Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_delete_any","timestamp":"2025-08-12T23:11:33.318Z"}
+{"level":"info","message":"✅ Found existing permission: admin_property_verify","timestamp":"2025-08-12T23:11:33.532Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_view_platform_analytics","timestamp":"2025-08-12T23:11:33.709Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_users","timestamp":"2025-08-12T23:11:33.899Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_properties","timestamp":"2025-08-12T23:11:34.084Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_analytics","timestamp":"2025-08-12T23:11:34.279Z"}
+{"level":"info","message":"✅ Found existing permission: admin_dashboard_manage_reports","timestamp":"2025-08-12T23:11:34.462Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_create","timestamp":"2025-08-12T23:11:34.658Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_update","timestamp":"2025-08-12T23:11:34.845Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_role_delete","timestamp":"2025-08-12T23:11:35.034Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_permission_assign","timestamp":"2025-08-12T23:11:35.214Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_user_impersonate","timestamp":"2025-08-12T23:11:35.406Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_config","timestamp":"2025-08-12T23:11:35.590Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_monitor","timestamp":"2025-08-12T23:11:35.776Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_backup","timestamp":"2025-08-12T23:11:35.967Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_restore","timestamp":"2025-08-12T23:11:36.166Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_logs","timestamp":"2025-08-12T23:11:36.360Z"}
+{"level":"info","message":"✅ Found existing permission: superadmin_system_users","timestamp":"2025-08-12T23:11:36.537Z"}
+{"level":"info","message":"👥 Creating roles with permissions...","timestamp":"2025-08-12T23:11:36.538Z"}
+{"level":"info","message":"✅ Found existing role: BUYER","timestamp":"2025-08-12T23:11:36.726Z"}
+{"level":"info","message":"✅ Role BUYER created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:36.726Z"}
+{"level":"info","message":"✅ Found existing role: HOMEOWNER","timestamp":"2025-08-12T23:11:36.915Z"}
+{"level":"info","message":"✅ Role HOMEOWNER created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:36.915Z"}
+{"level":"info","message":"✅ Found existing role: REALTOR","timestamp":"2025-08-12T23:11:37.112Z"}
+{"level":"info","message":"✅ Role REALTOR created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:37.112Z"}
+{"level":"info","message":"✅ Found existing role: DEVELOPER","timestamp":"2025-08-12T23:11:37.295Z"}
+{"level":"info","message":"✅ Role DEVELOPER created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:37.295Z"}
+{"level":"info","message":"✅ Found existing role: ADMIN","timestamp":"2025-08-12T23:11:37.500Z"}
+{"level":"info","message":"✅ Role ADMIN created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:37.500Z"}
+{"level":"info","message":"✅ Found existing role: SUPER_ADMIN","timestamp":"2025-08-12T23:11:37.688Z"}
+{"level":"info","message":"✅ Role SUPER_ADMIN created/found (permissions will be assigned later)","timestamp":"2025-08-12T23:11:37.688Z"}
+{"level":"info","message":"👑 Creating System Admin user...","timestamp":"2025-08-12T23:11:37.688Z"}
+{"level":"info","message":"✅ System Admin user created successfully","timestamp":"2025-08-12T23:11:38.779Z"}
+{"level":"info","message":"🎉 Permissions and roles seeding completed successfully!","timestamp":"2025-08-12T23:11:39.350Z"}
+{"level":"info","message":"📊 Seeding Summary:","timestamp":"2025-08-12T23:11:39.350Z"}
+{"level":"info","message":"   - Total Permissions: 87","timestamp":"2025-08-12T23:11:39.350Z"}
+{"level":"info","message":"   - Total Roles: 7","timestamp":"2025-08-12T23:11:39.350Z"}
+{"level":"info","message":"   - Total Users: 10","timestamp":"2025-08-12T23:11:39.350Z"}
+{"level":"info","message":"   - System Admin: alliveinnovationtech@gmail.com","timestamp":"2025-08-12T23:11:39.350Z"}
