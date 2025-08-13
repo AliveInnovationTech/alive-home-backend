@@ -44,9 +44,24 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: null
         },
         category: {
-            type: DataTypes.STRING,
+            type: DataTypes.ENUM(
+                'GENERAL',
+                'USER_MANAGEMENT',
+                'ROLE_MANAGEMENT',
+                'PROPERTY_MANAGEMENT',
+                'LISTING_APPROVAL',
+                'TRANSACTION_MANAGEMENT',
+                'REPORTING',
+                'NOTIFICATION',
+                'SETTINGS',
+                'BILLING',
+                'CONTENT_MANAGEMENT',
+                'SYSTEM',
+                'CUSTOM',
+                'PERMISSION_MANAGEMENT'
+            ),
             allowNull: false,
-            defaultValue: 'general',
+            defaultValue: 'GENERAL',
             validate: {
                 notEmpty: {
                     msg: 'Category is required'

@@ -154,7 +154,7 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             },
-            profilePictureUrl: {
+            profilePicture: {
                 type: DataTypes.STRING,
                 validate: {
                     isUrl: {

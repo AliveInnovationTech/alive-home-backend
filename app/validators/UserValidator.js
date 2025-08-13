@@ -5,11 +5,11 @@ const User = require("../models/UserModel");
 
 
 
-exports.createUser = async (payload) => {
+exports.createUser = async (body) => {
     const {
         email,
         phoneNumber,
-    } = payload;
+    } = body;
 
     let schema = {
         email: Joi.string().email().required(),
@@ -20,7 +20,7 @@ exports.createUser = async (payload) => {
         roleId: Joi.string()
     };
 
-    const error = validate(schema, payload);
+    const error = validate(schema, body);
 
     if (error) return error;
 
@@ -52,3 +52,13 @@ exports.createUser = async (payload) => {
 
 
 };
+
+exports.updateUser = async(body)=>{
+    let schema ={
+    firstName: Joi.string().required(),
+    lastName: Joi.string().required(),
+    profilePicture: Joi.string().uri().optional(),
+    cloudinary_id: Joi.string()
+    }
+ return validate(schema, body);
+}
