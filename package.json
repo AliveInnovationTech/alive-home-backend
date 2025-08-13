@@ -9,7 +9,14 @@
   "scripts": {
     "dev": "nodemon ./bin/www",
     "start": "node ./bin/www",
-    "test": "jest --verbose -c jest.config.js"
+    "test": "jest --verbose -c jest.config.js",
+    "migrate": "node lib/migrate.js",
+    "seed": "node lib/seed.js",
+
+    "seed:permissions": "node lib/seed-permissions.js",
+    "migrate:seed": "npm run migrate && npm run seed",
+    "migrate:seed:all": "npm run migrate && npm run seed && npm run seed:permissions"
+
   },
   "dependencies": {
     "axios": "^0.21.1",
@@ -41,6 +48,7 @@
     "morgan": "~1.9.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
+    "nodemon": "^3.1.10",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
