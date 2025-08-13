@@ -63,7 +63,7 @@ const rolesToPermissions = {
         'admin_dashboard_view_usage_own',
 
     ],
-    SUPER_ADMIN: PERMISSION.map(p => p.name),
+    SYS: PERMISSION.map(p => p.name),
 };
 
 module.exports = rolesToPermissions;

@@ -41,6 +41,18 @@ exports.fetchAllUsers = async (req, res) => {
     return response.paginated(res, data, statusCode);
 };
 
+exports.updateUser = async (req, res) => {
+    const {
+        error,
+        statusCode,
+        data
+    } = await userService.updateUser(req.file, req.params.userId, req.body);
+
+    if (error) return response.error(res, error, statusCode);
+
+    return response.success(res, data, statusCode);
+};
+
 exports.deleteUser = async (req, res) => {
     const {
         error,

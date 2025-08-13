@@ -2,13 +2,14 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/UserModel");
 const userValidator = require("../validators/UserValidator");
+const cloudinary = require("../utils/cloudinary");
 
 
 
 
-exports.createUser = async (payload) => {
+exports.createUser = async (body) => {
     try {
-        const validatorError = await userValidator.createUser(payload);
+        const validatorError = await userValidator.createUser(body);
         if (validatorError) {
             return {
                 error: validatorError,
@@ -17,12 +18,12 @@ exports.createUser = async (payload) => {
         }
 
         const user = await User.create({
-            email: payload.email,
-            phoneNumber: payload.phoneNumber,
-            password: payload.password,
-            firstName: payload.firstName,
-            lastName: payload.lastName,
-            roleId: payload.roleId
+            email: body.email,
+            phoneNumber: body.phoneNumber,
+            password: body.password,
+            firstName: body.firstName,
+            lastName: body.lastName,
+            roleId: body.roleId
         });
 
 
@@ -103,8 +104,8 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
 
         const data = users.map(user => {
             const canViewRole =
-                requestingUser?.roleId === 'Admin' ||
-                requestingUser?.roleId === 'Super Admin' ||
+                requestingUser?.roleId === 'admin' ||
+                requestingUser?.roleId === 'superadmin' ||
                 requestingUser?.id === user.id;
 
             return {
@@ -129,6 +130,58 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
         };
     } catch (e) {
         console.log("An unknown error has occurred.While trying to fetch users" + e);
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        };
+    }
+};
+
+exports.updateUser = async (file, userId, body) => {
+    try {
+        const validatorError = await userValidator.updateUser(body);
+        if (validatorError) {
+            return {
+                error: validatorError,
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return {
+                error: "Oops! The user you are looking for does not exist.",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        let result;
+        if (file) {
+            result = await cloudinary.uploader.upload(file.path, {
+                folder: "Alive/users",
+                resource_type: "image",
+                height: 400,
+                width: 400,
+                crop: "scale"
+            });
+        }
+        const update = {
+            firstName: body.firstName || user.firstName,
+            lastName: body.lastName || user.lastName,
+            profilePicture: result?.secure_url || user.profilePicture,
+            cloudinary_Id: result?.public_id || user.cloudinary_Id
+        };
+
+        await User.update(update, { where: { user_id: userId } });
+        return {
+            data: {
+                userId: user.id,
+                ...update
+            },
+            statusCode: StatusCodes.OK
+        };
+    } catch (e) {
+        console.log("An unknown error has occurred while trying to update a user" + e);
         return {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR

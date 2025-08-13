@@ -21,6 +21,7 @@
   "dependencies": {
     "axios": "^0.21.1",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
     "crypto-random-string": "^3.0.1",
     "dayjs": "^1.10.7",
@@ -45,11 +46,13 @@
     "mongoose-data-seed": "^2.1.6",
     "mongoose-paginate": "^5.0.3",
     "morgan": "~1.9.0",
+    "multer": "^2.0.2",
     "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10",
     "pg": "^8.16.3",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
+    "sequelize-cli": "^6.6.3",
     "tm-utils": "^0.1.13",
     "uuid": "^3.3.2",
     "winston": "^3.17.0"
@@ -60,9 +63,5 @@
     "eslint-plugin-jsdoc": "30.5.1",
     "jest": "^24.8.0",
     "supertest": "^4.0.2"
-  },
-  "mdSeed": {
-    "seedersFolder": "./databases/seeders",
-    "customSeederTemplate": "./md-seed-template.ejs"
   }
 }

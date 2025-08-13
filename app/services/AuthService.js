@@ -69,9 +69,9 @@ exports.login = async (body) => {
     }
 }
 
-exports.me = async (payload) => {
+exports.me = async (body) => {
     try {
-        const user = await User.findById(payload.userId);
+        const user = await User.findById(body.userId);
         if (!user) {
             return {
                 error: "Oops! User not found",
