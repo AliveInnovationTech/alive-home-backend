@@ -40,6 +40,30 @@ module.exports = (sequelize, DataTypes) => {
                 onDelete: 'CASCADE',
                 hooks: true
             });
+
+            User.hasMany(models.UserSubscription, {
+                foreignKey: 'userId',
+                as: 'subscriptions',
+                onDelete: 'CASCADE'
+            });
+
+            User.hasMany(models.Transaction, {
+                foreignKey: 'userId',
+                as: 'transactions',
+                onDelete: 'CASCADE'
+            });
+
+            User.hasMany(models.Payment, {
+                foreignKey: 'createdBy',
+                as: 'createdPayments',
+                onDelete: 'SET NULL'
+            });
+
+            User.hasMany(models.Transaction, {
+                foreignKey: 'commissionRecipientId',
+                as: 'commissionTransactions',
+                onDelete: 'SET NULL'
+            });
         }
 
         async validatePassword(password) {
