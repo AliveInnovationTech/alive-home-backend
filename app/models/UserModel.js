@@ -41,11 +41,11 @@ module.exports = (sequelize, DataTypes) => {
                 hooks: true
             });
 
-            User.hasMany(models.UserSubscription, {
-                foreignKey: 'userId',
-                as: 'subscriptions',
-                onDelete: 'CASCADE'
-            });
+            // User.hasMany(models.UserSubscription, {
+            //     foreignKey: 'userId',
+            //     as: 'subscriptions',
+            //     onDelete: 'CASCADE'
+            // });
 
             User.hasMany(models.Transaction, {
                 foreignKey: 'userId',
