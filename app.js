@@ -13,6 +13,7 @@ let app = express();
 const createError = require("http-errors");
 require("./lib")(app, express);
 const {formatPhoneNumber} = require("tm-utils");
+const logger = require("./app/utils/logger");
 
 
 
@@ -26,7 +27,7 @@ app.use((req, res, next) => {
 
         return next();
     }catch (e){
-        console.log("EformatPhoneNumber", e);
+        logger.error("Phone number formatting error", { error: e.message });
 
         return next();
     }
@@ -44,7 +45,7 @@ app.use((err, req, res, next) => {
 
 // error handler
 app.use((err, req, res, next) => {
-    console.log("Error", err);
+    logger.error("Unhandled application error", { error: err.message, stack: err.stack });
     res.status(err.status || StatusCodes.INTERNAL_SERVER_ERROR)
         .json({error: err.message});
 });

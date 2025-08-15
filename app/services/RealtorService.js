@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const realtorValidator = require("../validators/RealtorValidator");
 const cloudinary = require("../utils/cloudinary"); 
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -14,8 +16,6 @@ const getModels = () => {
         Realtor: sequelize.models.Realtor
     };
 };
-
-
 
 exports.createRealtorProfile = async (payload, user) => {
     try {
@@ -68,6 +68,8 @@ exports.createRealtorProfile = async (payload, user) => {
             ]
         });
 
+        logInfo('Realtor profile created successfully', { realtorId: realtorWithUser.realtorId, userId: user.userId });
+        
         return {
             data: {
                 realtorId: realtorWithUser.realtorId,
@@ -84,11 +86,7 @@ exports.createRealtorProfile = async (payload, user) => {
         };
 
     } catch (e) {
-        console.error("An error occurred while creating realtor profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('RealtorService', 'createRealtorProfile', e, 'An error occurred while creating realtor profile');
     }
 };
 

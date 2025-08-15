@@ -3,8 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const homeOwnerValidator = require("../validators/HomeOwnerValidator");
 const cloudinary = require("../utils/cloudinary");
-
-
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 const getModels = () => {
     if (!sequelize.models.User || !sequelize.models.Owner) {
@@ -15,7 +15,6 @@ const getModels = () => {
         Owner: sequelize.models.Owner
     };
 };
-
 
 exports.createHomeOwnerProfile = async (payload, user) => {
     try {
@@ -66,6 +65,8 @@ exports.createHomeOwnerProfile = async (payload, user) => {
             ]
         });
 
+        logInfo('Homeowner profile created successfully', { ownerId: ownerWithUser.ownerId, userId: user.userId });
+        
         return {
             data: {
                 ownerId: ownerWithUser.ownerId,
@@ -79,11 +80,7 @@ exports.createHomeOwnerProfile = async (payload, user) => {
         };
 
     } catch (e) {
-        console.error("An error occurred while creating homeowner profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('HomeOwnerService', 'createHomeOwnerProfile', e, 'An error occurred while creating homeowner profile');
     }
 };
 

@@ -64,6 +64,18 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'commissionTransactions',
                 onDelete: 'SET NULL'
             });
+
+            User.hasMany(models.UserBehavior, {
+                foreignKey: 'userId',
+                as: 'behaviors',
+                onDelete: 'CASCADE'
+            });
+
+            User.hasMany(models.Recommendation, {
+                foreignKey: 'userId',
+                as: 'recommendations',
+                onDelete: 'CASCADE'
+            });
         }
 
         async validatePassword(password) {
