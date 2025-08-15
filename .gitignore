@@ -3,3 +3,5 @@
 node_modules/
 .env
 usergroup.json
+combined.log
+error.log

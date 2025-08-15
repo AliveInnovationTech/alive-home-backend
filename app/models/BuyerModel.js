@@ -54,15 +54,6 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.ENUM('HOUSE', 'CONDO', 'TOWNHOUSE', 'MULTIFAMILY'),
                 defaultValue: 'HOUSE'
             },
-            cloudinary_id: {
-                type: DataTypes.STRING,
-                validate: {
-                    isUrl: {
-                        msg: 'Invalid URL format'
-                    }
-                },
-                defaultValue: null
-            }
         },
         {
             sequelize,

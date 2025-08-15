@@ -40,6 +40,42 @@ module.exports = (sequelize, DataTypes) => {
                 onDelete: 'CASCADE',
                 hooks: true
             });
+
+            // User.hasMany(models.UserSubscription, {
+            //     foreignKey: 'userId',
+            //     as: 'subscriptions',
+            //     onDelete: 'CASCADE'
+            // });
+
+            User.hasMany(models.Transaction, {
+                foreignKey: 'userId',
+                as: 'transactions',
+                onDelete: 'CASCADE'
+            });
+
+            User.hasMany(models.Payment, {
+                foreignKey: 'createdBy',
+                as: 'createdPayments',
+                onDelete: 'SET NULL'
+            });
+
+            User.hasMany(models.Transaction, {
+                foreignKey: 'commissionRecipientId',
+                as: 'commissionTransactions',
+                onDelete: 'SET NULL'
+            });
+
+            User.hasMany(models.UserBehavior, {
+                foreignKey: 'userId',
+                as: 'behaviors',
+                onDelete: 'CASCADE'
+            });
+
+            User.hasMany(models.Recommendation, {
+                foreignKey: 'userId',
+                as: 'recommendations',
+                onDelete: 'CASCADE'
+            });
         }
 
         async validatePassword(password) {
@@ -152,7 +188,7 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             },
-            profilePictureUrl: {
+            profilePicture: {
                 type: DataTypes.STRING,
                 validate: {
                     isUrl: {

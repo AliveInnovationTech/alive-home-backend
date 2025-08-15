@@ -1,17 +1,24 @@
 "use strict";
-const User = require("../models/UserModel");
 const { StatusCodes } = require("http-status-codes")
 const authValidator = require("../validators/AuthValidator");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto-random-string")
 const { Op } = require("sequelize");
-const Token = require("../models/TokenModel");
 const passwordValidator = require("../validators/PasswordValidator");
-const {sendEmailNotification} = require("../services/NotificationService")
+const { sendEmailNotification } = require("../services/NotificationService");
+const sequelize = require("../../lib/database");
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
-
-
-
+const getModels = () => {
+    if (!sequelize.models.User || !sequelize.models.Token) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User,
+        Token: sequelize.models.Token
+    };
+};
 
 exports.login = async (body) => {
     try {
@@ -24,7 +31,17 @@ exports.login = async (body) => {
         }
         const { email, phoneNumber, password } = body;
 
-        const user = await User.findOne({ $or: [{ email }, { phoneNumber }] });
+        const { User, Token } = getModels();
+
+        const user = await User.scope('withPassword').findOne({ 
+            where: {
+                [Op.or]: [
+                    { email },
+                    { phoneNumber }
+                ]
+            },
+            include: [{ association: 'roles', attributes: ['name'], through: { attributes: [] } }]
+        });
         if (!user) {
             return {
                 error: "User not found",
@@ -40,19 +57,21 @@ exports.login = async (body) => {
             };
         }
 
-        const token = jwt.sign({ userId: user.id },
+        const token = jwt.sign({ userId: user.userId },
             process.env.SECURITY_TOKEN,
             { expiresIn: "1h" },
             { algorithm: "HS256" }
         );
 
+        logInfo('User login successful', { userId: user.userId, email: user.email });
+        
         return {
             data: {
                 user: {
                     userId: user.userId,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
-                    roles: user.roles.map(role => role.name),
+                    roles: user.roles?.map(role => role.name) || [],
                     profilePictureUrl: user.profilePictureUrl
                 },
                 token
@@ -61,17 +80,17 @@ exports.login = async (body) => {
         };
 
     } catch (e) {
-        console.log("An unknown error occurred during login. Please try again later");
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        }
+        return handleServiceError('AuthService', 'login', e, 'An unknown error occurred during login. Please try again later');
     }
 }
 
-exports.me = async (payload) => {
+exports.me = async (body) => {
+
+    const { User, Token } = getModels();
     try {
-        const user = await User.findById(payload.userId);
+        const user = await User.findByPk(body.userId, {
+            include: [{ association: 'roles', attributes: ['name'], through: { attributes: [] } }]
+        });
         if (!user) {
             return {
                 error: "Oops! User not found",
@@ -79,13 +98,15 @@ exports.me = async (payload) => {
             };
         }
 
+        logInfo('User profile retrieved successfully', { userId: user.userId });
+        
         return {
             data: {
                 user: {
                     userId: user.userId,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
-                    roles: user.roles.map(role => role.name),
+                    roles: user.roles?.map(role => role.name) || [],
                     profilePictureUrl: user.profilePictureUrl
                 }
             },
@@ -93,11 +114,7 @@ exports.me = async (payload) => {
         };
 
     } catch (e) {
-        console.log("An unknown error occurred while fetching user data. Please try again later");
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        }
+        return handleServiceError('AuthService', 'me', e, 'An unknown error occurred while fetching user data. Please try again later');
     }
 }
 
@@ -110,9 +127,9 @@ exports.forgotPassword = async (body) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+        const { User, Token } = getModels();
         const { email } = body;
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ where: { email } });
         if (!user) {
             return {
                 error: "User not found",
@@ -120,12 +137,11 @@ exports.forgotPassword = async (body) => {
             };
         }
 
-      let token = await Token.findOne({
+        let token = await Token.findOne({
             where: {
-                userId: user.id,
-                type: 'PASSWORD_RESET',
+                userId: user.userId,
                 expiresAt: {
-                    [Op.gt]: new Date() 
+                    [Op.gt]: new Date()
                 }
             }
         });
@@ -141,22 +157,24 @@ exports.forgotPassword = async (body) => {
 
         const newToken = crypto({ length: 32 });
         await Token.create({
-            token,
-            userId: user.id
+            token: newToken,
+            userId: user.userId
         });
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=/${user.id}/${newToken}`;
+        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=/${user.userId}/${newToken}`;
 
         await sendEmailNotification(
-            user.email, 
-            user.firstName, 
-            "Password Reset Request", 
+            user.email,
+            user.firstName,
+            "Password Reset Request",
             "forgotPassword",
             {
-            link: resetLink
+                link: resetLink
             }
         );
 
+        logInfo('Password reset email sent successfully', { email: user.email });
+        
         return {
             data: {
                 message: "Password reset link sent to your email"
@@ -165,11 +183,7 @@ exports.forgotPassword = async (body) => {
         };
 
     } catch (e) {
-        console.log("An unknown error occurred during password reset. Please try again later");
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        }
+        return handleServiceError('AuthService', 'forgotPassword', e, 'An unknown error occurred during password reset. Please try again later');
     }
 }
 
@@ -182,9 +196,9 @@ exports.resetPassword = async (body, userId, token) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+        const { User, Token } = getModels();
         //const { userId, token, newPassword } = body;
-        const user = await User.findById(userId);
+        const user = await User.findByPk(userId);
         if (!user) {
             return {
                 error: "User not found",
@@ -194,11 +208,10 @@ exports.resetPassword = async (body, userId, token) => {
 
         const existingToken = await Token.findOne({
             where: {
-                userId: user.id,
+                userId: user.userId,
                 token,
-                type: 'PASSWORD_RESET',
                 expiresAt: {
-                    [Op.gt]: new Date() 
+                    [Op.gt]: new Date()
                 }
             }
         });
@@ -214,26 +227,32 @@ exports.resetPassword = async (body, userId, token) => {
         await user.save();
         await existingToken.destroy();
 
+        logInfo('Password reset successful', { userId: user.userId });
+        
         return {
             data: {
+<<<<<<< Updated upstream
+                user: {
+                    userId: user.id,
+                    message: "Password successfully reset"
+                },
+                statusCode: StatusCodes.OK
+            }
+=======
             user:{
-            userId: user.id,
+            userId: user.userId,
             message: "Password successfully reset"
             },
           statusCode: StatusCodes.OK
+>>>>>>> Stashed changes
         }
-    }
 
     } catch (e) {
-        console.log("An unknown error occurred during password reset. Please try again later");
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        }
+        return handleServiceError('AuthService', 'resetPassword', e, 'An unknown error occurred during password reset. Please try again later');
     }
 }
 
-exports.changePassword = async(body, userId) => {
+exports.changePassword = async (body, userId) => {
     try {
         const validatorError = await passwordValidator.updatePassword(body);
         if (validatorError) {
@@ -242,9 +261,9 @@ exports.changePassword = async(body, userId) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+      const {User, Token} = getModels();
         const { oldPassword, newPassword } = body;
-        const user = await User.findById(userId);
+        const user = await User.scope('withPassword').findByPk(userId);
         if (!user) {
             return {
                 error: "User not found",
@@ -263,20 +282,18 @@ exports.changePassword = async(body, userId) => {
         user.password = newPassword;
         await user.save();
 
+        logInfo('Password change successful', { userId: user.userId });
+        
         return {
             data: {
                 user: {
-                    userId: user.id,
+                    userId: user.userId,
                     message: "Password successfully updated"
                 }
             },
             statusCode: StatusCodes.OK
         };
     } catch (e) {
-        console.log("An unknown error occurred during password update. Please try again later");
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        }
+        return handleServiceError('AuthService', 'changePassword', e, 'An unknown error occurred during password update. Please try again later');
     }
 }
