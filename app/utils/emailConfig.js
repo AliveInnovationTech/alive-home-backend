@@ -1,5 +1,6 @@
 "use strict"
 const nodemailer = require("nodemailer");
+const logger = require("./logger");
 
 const nodeMailerConfig = async (receiverEmail, subject, text, html, attachments) => {
     try {
@@ -26,9 +27,9 @@ const nodeMailerConfig = async (receiverEmail, subject, text, html, attachments)
             html: html,
             attachments:attachments
         });
-        console.log("email sent successfully");
+        logger.info("Email sent successfully", { receiverEmail, subject });
     } catch (error) {
-        console.log("email not sent" +error);
+        logger.error("Email sending failed", { receiverEmail, subject, error: error.message });
     }
 };
 module.exports = nodeMailerConfig;

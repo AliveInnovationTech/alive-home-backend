@@ -2,7 +2,8 @@
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const buyerValidator = require("../validators/BuyerValidator");
-
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -14,7 +15,6 @@ const getModels = () => {
         Buyer: sequelize.models.Buyer
     };
 };
-
 
 exports.createBuyerProfile = async (payload, user) => {
     try {
@@ -67,6 +67,8 @@ exports.createBuyerProfile = async (payload, user) => {
             ]
         });
 
+        logInfo('Buyer profile created successfully', { buyerId: buyerWithUser.buyerId, userId: user.userId });
+        
         return {
             data: {
                 buyerId: buyerWithUser.buyerId,
@@ -82,11 +84,7 @@ exports.createBuyerProfile = async (payload, user) => {
         };
 
     } catch (e) {
-        console.error("An error occurred while creating buyer profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('BuyerService', 'createBuyerProfile', e, 'An error occurred while creating buyer profile');
     }
 };
 

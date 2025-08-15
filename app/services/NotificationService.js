@@ -6,6 +6,8 @@ const sequelize = require("../../lib/database")
 const path = require("path");
 const ejs = require("ejs");
 const fs = require("fs");
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 /**
  * Send an email notification with EJS template support
@@ -40,7 +42,7 @@ exports.sendEmailNotification = async (recipientEmail, subject, templateName, te
         const { Notification } = getModels()
         // Send email
         const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent: " + info.response);
+        logInfo("Email sent successfully", { recipientEmail, subject, response: info.response });
 
         // Save notification record
         await Notification.create({
@@ -57,7 +59,7 @@ exports.sendEmailNotification = async (recipientEmail, subject, templateName, te
             message: "Email notification sent successfully"
         };
     } catch (error) {
-        console.error("Error sending email: ", error);
+        logger.error("Error sending email", { recipientEmail, subject, error: error.message });
 
         await Notification.create({
             recipientId: recipientEmail,
@@ -100,7 +102,7 @@ exports.sendPushNotification = async (recipientId, title, message) => {
             throw new Error("Push notification failed");
         }
     } catch (error) {
-        console.error("Error sending push notification: ", error);
+        logger.error("Error sending push notification", { recipientId, title, message, error: error.message });
 
         await Notification.create({
             recipientId,

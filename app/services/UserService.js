@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const userValidator = require("../validators/UserValidator");
 const cloudinary = require("../utils/cloudinary");
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 const getModels = () => {
     if (!sequelize.models.User) {
@@ -35,37 +37,29 @@ exports.createUser = async (body) => {
         });
 
 
-        const userWithRole = await User.findByPk(user.id, {
-            include: [
-                {
-                    model: Role,
-                    as: 'role',
-                    attributes: ['roleId', 'name']
-                }
-            ]
+        const userWithRole = await User.findByPk(user.userId, {
+            include: [{ association: 'roles', attributes: ['roleId', 'name'], through: { attributes: [] } }]
         });
 
+        logInfo('User created successfully', { userId: userWithRole.userId, email: userWithRole.email });
+        
         return {
             data: {
-                userId: userWithRole.id,
+                userId: userWithRole.userId,
                 email: userWithRole.email,
                 phoneNumber: userWithRole.phoneNumber,
                 firstName: userWithRole.firstName,
                 lastName: userWithRole.lastName,
-                role: {
-                    roleId: userWithRole.role?.id,
-                    name: userWithRole.role?.name
-                }
+                roles: userWithRole.roles?.map(role => ({
+                    roleId: role.roleId,
+                    name: role.name
+                })) || []
             },
             statusCode: StatusCodes.CREATED
         };
 
     } catch (e) {
-        console.error("An unknown error has occurred while trying to create a user:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('UserService', 'createUser', e, 'An unknown error has occurred while trying to create a user');
     }
 };
 
@@ -73,16 +67,18 @@ exports.createUser = async (body) => {
 exports.getUserById = async (userId) => {
     const { User } = getModels()
     try {
-        const user = await User.findById(userId);
+        const user = await User.findByPk(userId);
         if (!user) {
             return {
                 error: "Oops! The user you are looking for does not exist.",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
+        logInfo('User retrieved successfully', { userId: user.userId });
+        
         return {
             data: {
-                userId: user.id,
+                userId: user.userId,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
                 firstName: user.firstName,
@@ -92,11 +88,7 @@ exports.getUserById = async (userId) => {
             statusCode: StatusCodes.OK
         };
     } catch (e) {
-        console.log("An unknown error has occurred while trying to retrieve a user" + e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('UserService', 'getUserById', e, 'An unknown error has occurred while trying to retrieve a user');
     }
 };
 
@@ -116,10 +108,10 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
             const canViewRole =
                 requestingUser?.roleId === 'admin' ||
                 requestingUser?.roleId === 'superadmin' ||
-                requestingUser?.id === user.id;
+                requestingUser?.userId === user.userId;
 
             return {
-                userId: user.id,
+                userId: user.userId,
                 email: user.email,
                 phoneNumber: user.phoneNumber,
                 firstName: user.firstName,
@@ -128,6 +120,8 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
             };
         });
 
+        logInfo('Users fetched successfully', { totalUsers, pageNumber, pageSize });
+        
         return {
             data,
             pagination: {
@@ -139,11 +133,7 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
             statusCode: StatusCodes.OK
         };
     } catch (e) {
-        console.log("An unknown error has occurred.While trying to fetch users" + e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('UserService', 'fetchAllUsers', e, 'An unknown error has occurred while trying to fetch users');
     }
 };
 
@@ -157,7 +147,7 @@ exports.updateUser = async (file, userId, body) => {
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
-        const user = await User.findById(userId);
+        const user = await User.findByPk(userId);
 
         if (!user) {
             return {
@@ -183,46 +173,42 @@ exports.updateUser = async (file, userId, body) => {
             cloudinary_Id: result?.public_id || user.cloudinary_Id
         };
 
-        await User.update(update, { where: { user_id: userId } });
+        await User.update(update, { where: { userId: userId } });
+        logInfo('User updated successfully', { userId: user.userId });
+        
         return {
             data: {
-                userId: user.id,
+                userId: user.userId,
                 ...update
             },
             statusCode: StatusCodes.OK
         };
     } catch (e) {
-        console.log("An unknown error has occurred while trying to update a user" + e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('UserService', 'updateUser', e, 'An unknown error has occurred while trying to update a user');
     }
 };
 
 exports.deleteUser = async (userId) => {
     const { User } = getModels();
     try {
-        const user = await User.findById(userId);
+        const user = await User.findByPk(userId);
         if (!user) {
             return {
                 error: "Oops! The user you are looking for does not exist. Hence, we cannot delete it.",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
-        await User.destroy({ where: { user_id: userId } });
+        await User.destroy({ where: { userId: userId } });
+        logInfo('User deleted successfully', { userId: user.userId });
+        
         return {
             data: {
-                userId: user.id
+                userId: user.userId
             },
             statusCode: StatusCodes.NO_CONTENT
         };
     } catch (e) {
-        console.log("An unknown error has occurred while trying to delete a user" + e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('UserService', 'deleteUser', e, 'An unknown error has occurred while trying to delete a user');
     }
 };
 

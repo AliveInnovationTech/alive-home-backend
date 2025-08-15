@@ -3,6 +3,8 @@ const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const developerValidator = require("../validators/DeveloperValidator");
 const cloudinary = require("../utils/cloudinary")
+const logger = require("../utils/logger");
+const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -77,6 +79,8 @@ exports.createDeveloperProfile = async (payload, user, file) => {
             ]
         });
 
+        logInfo('Developer profile created successfully', { developerId: developerWithUser.developerId, userId: user.userId });
+        
         return {
             data: {
                 developerId: developerWithUser.developerId,
@@ -94,11 +98,7 @@ exports.createDeveloperProfile = async (payload, user, file) => {
         };
 
     } catch (e) {
-        console.error("An error occurred while creating developer profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+        return handleServiceError('DeveloperService', 'createDeveloperProfile', e, 'An error occurred while creating developer profile');
     }
 };
 

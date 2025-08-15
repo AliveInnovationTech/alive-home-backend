@@ -11,6 +11,7 @@ module.exports = (app) => {
     app.use("/api/v1/homeowners", require("./homeowner"));
     app.use("/api/v1/buyers", require("./buyer"));
     app.use("/api/v1/realtors", require("./realtor"));
+    app.use("/api/v1/payments", require("./payment"));
 
 
 };
