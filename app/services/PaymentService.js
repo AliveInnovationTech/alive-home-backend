@@ -519,13 +519,15 @@ exports.refundPayment = async (paymentId, refundData) => {
             updatedBy: refundData.userId
         });
 
+        logInfo('Payment refunded successfully', { paymentId, gatewayProvider: payment.gatewayProvider });
+
         return {
             data: {
                 payment: payment,
                 refundResponse: refundResponse
             },
             statusCode: StatusCodes.OK
-        logInfo('Payment refunded successfully', { paymentId, gatewayProvider: payment.gatewayProvider });
+        };
 
     } catch (e) {
         return handleServiceError('PaymentService', 'refundPayment', e, 'Error refunding payment');
