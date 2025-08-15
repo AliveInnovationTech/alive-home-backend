@@ -1,8 +1,73 @@
-const { DataTypes } = require('sequelize');
-const { v4: uuidv4 } = require('uuid');
+"use strict";
+const { Model, DataTypes } = require('sequelize');
+const crypto = require('crypto');
 
-module.exports = (sequelize) => {
-  const Transaction = sequelize.define('Transaction', {
+module.exports = (sequelize, DataTypes) => {
+  class Transaction extends Model {
+    static associate(models) {
+      Transaction.belongsTo(models.User, {
+        foreignKey: 'userId',
+        as: 'user',
+        onDelete: 'CASCADE'
+      });
+
+      Transaction.belongsTo(models.Property, {
+        foreignKey: 'propertyId',
+        as: 'property',
+        onDelete: 'SET NULL'
+      });
+
+      Transaction.belongsTo(models.UserSubscription, {
+        foreignKey: 'subscriptionId',
+        as: 'subscription',
+        onDelete: 'SET NULL'
+      });
+
+      Transaction.belongsTo(models.User, {
+        foreignKey: 'commissionRecipientId',
+        as: 'commissionRecipient',
+        onDelete: 'SET NULL'
+      });
+
+      Transaction.belongsTo(models.Transaction, {
+        foreignKey: 'parentTransactionId',
+        as: 'parentTransaction',
+        onDelete: 'SET NULL'
+      });
+
+      Transaction.hasMany(models.Transaction, {
+        foreignKey: 'parentTransactionId',
+        as: 'childTransactions',
+        onDelete: 'SET NULL'
+      });
+
+      Transaction.hasMany(models.Payment, {
+        foreignKey: 'transactionId',
+        as: 'payments',
+        onDelete: 'CASCADE'
+      });
+    }
+
+    validateStatusTransitions() {
+      const allowedTransitions = {
+        'PENDING': ['PROCESSING', 'CANCELLED'],
+        'PROCESSING': ['COMPLETED', 'FAILED', 'CANCELLED'],
+        'COMPLETED': ['REFUNDED'],
+        'FAILED': ['PENDING'],
+        'CANCELLED': [],
+        'REFUNDED': []
+      };
+
+      const previousStatus = this._previousDataValues?.status || 'PENDING';
+      const currentStatus = this.status;
+
+      if (!allowedTransitions[previousStatus]?.includes(currentStatus)) {
+        throw new Error(`Invalid status transition from ${previousStatus} to ${currentStatus}`);
+      }
+    }
+  }
+
+  Transaction.init({
     transactionId: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -14,7 +79,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       references: {
         model: 'users',
-        key: 'userId'
+        key: 'user_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
@@ -24,7 +89,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'properties',
-        key: 'propertyId'
+        key: 'property_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -34,7 +99,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'user_subscriptions',
-        key: 'subscriptionId'
+        key: 'subscription_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -91,7 +156,9 @@ module.exports = (sequelize) => {
     referenceNumber: {
       type: DataTypes.STRING(50),
       allowNull: false,
-      unique: true,
+      unique: {
+        name: 'transactions_reference_number_unique'
+      },
       validate: {
         notEmpty: true,
         len: [1, 50]
@@ -109,7 +176,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'transactions',
-        key: 'transactionId'
+        key: 'transaction_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -152,7 +219,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'users',
-        key: 'userId'
+        key: 'user_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -174,47 +241,59 @@ module.exports = (sequelize) => {
       allowNull: true
     }
   }, {
+    sequelize,
     tableName: 'transactions',
     underscored: true,
     paranoid: true,
     timestamps: true,
     indexes: [
       {
-        fields: ['userId']
+        fields: ['user_id']
       },
       {
-        fields: ['transactionType']
+        fields: ['transaction_type']
       },
       {
         fields: ['status']
       },
       {
-        fields: ['referenceNumber'],
-        unique: true
+        fields: ['external_transaction_id']
       },
       {
-        fields: ['externalTransactionId']
+        fields: ['property_id']
       },
       {
-        fields: ['propertyId']
+        fields: ['subscription_id']
       },
       {
-        fields: ['subscriptionId']
+        fields: ['commission_recipient_id']
       },
       {
-        fields: ['commissionRecipientId']
-      },
-      {
-        fields: ['createdAt']
+        fields: ['created_at']
       }
     ],
     hooks: {
       beforeCreate: (transaction) => {
         if (!transaction.referenceNumber) {
-          transaction.referenceNumber = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+          transaction.referenceNumber = `TXN-${Date.now()}-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
+        }
+        
+        // Set timestamps based on initial status
+        if (transaction.status === 'PROCESSING') {
+          transaction.processedAt = new Date();
+        } else if (transaction.status === 'COMPLETED') {
+          transaction.processedAt = new Date();
+          transaction.completedAt = new Date();
+        } else if (transaction.status === 'FAILED') {
+          transaction.failedAt = new Date();
+        } else if (transaction.status === 'CANCELLED') {
+          transaction.cancelledAt = new Date();
         }
       },
       beforeUpdate: (transaction) => {
+        // Validate status transitions
+        transaction.validateStatusTransitions();
+        
         const previousStatus = transaction._previousDataValues?.status;
         const currentStatus = transaction.status;
         
@@ -234,53 +313,65 @@ module.exports = (sequelize) => {
               break;
           }
         }
+      },
+      beforeSave: (transaction) => {
+        // Set timestamps based on initial status on create
+        if (transaction.isNewRecord) {
+          if (transaction.status === 'PROCESSING') {
+            transaction.processedAt = new Date();
+          } else if (transaction.status === 'COMPLETED') {
+            transaction.processedAt = new Date();
+            transaction.completedAt = new Date();
+          } else if (transaction.status === 'FAILED') {
+            transaction.failedAt = new Date();
+          } else if (transaction.status === 'CANCELLED') {
+            transaction.cancelledAt = new Date();
+          }
+        }
+      }
+    },
+    validate: {
+      validateTransactionType() {
+        // Type-specific validations
+        switch (this.transactionType) {
+          case 'SUBSCRIPTION_PAYMENT':
+            if (!this.subscriptionId) {
+              throw new Error('Subscription ID is required for subscription payments');
+            }
+            if (this.propertyId) {
+              throw new Error('Property ID should not be set for subscription payments');
+            }
+            break;
+          case 'PROPERTY_PURCHASE':
+            if (!this.propertyId) {
+              throw new Error('Property ID is required for property purchases');
+            }
+            if (this.subscriptionId) {
+              throw new Error('Subscription ID should not be set for property purchases');
+            }
+            break;
+          case 'COMMISSION_PAYMENT':
+            if (!this.commissionRecipientId) {
+              throw new Error('Commission recipient ID is required for commission payments');
+            }
+            if (!this.commissionRate && !this.commissionAmount) {
+              throw new Error('Either commission rate or amount is required for commission payments');
+            }
+            break;
+        }
+
+        // Commission math consistency
+        if (this.commissionRate && this.commissionAmount) {
+          const calculatedAmount = (this.amount * this.commissionRate) / 100;
+          const tolerance = 0.01; // Allow for rounding differences
+          if (Math.abs(calculatedAmount - this.commissionAmount) > tolerance) {
+            throw new Error('Commission amount does not match calculated amount from rate');
+          }
+        }
       }
     }
   });
 
-  Transaction.associate = (models) => {
-    Transaction.belongsTo(models.User, {
-      foreignKey: 'userId',
-      as: 'user',
-      onDelete: 'CASCADE'
-    });
-
-    Transaction.belongsTo(models.Property, {
-      foreignKey: 'propertyId',
-      as: 'property',
-      onDelete: 'SET NULL'
-    });
-
-    Transaction.belongsTo(models.UserSubscription, {
-      foreignKey: 'subscriptionId',
-      as: 'subscription',
-      onDelete: 'SET NULL'
-    });
-
-    Transaction.belongsTo(models.User, {
-      foreignKey: 'commissionRecipientId',
-      as: 'commissionRecipient',
-      onDelete: 'SET NULL'
-    });
-
-    Transaction.belongsTo(models.Transaction, {
-      foreignKey: 'parentTransactionId',
-      as: 'parentTransaction',
-      onDelete: 'SET NULL'
-    });
-
-    Transaction.hasMany(models.Transaction, {
-      foreignKey: 'parentTransactionId',
-      as: 'childTransactions',
-      onDelete: 'SET NULL'
-    });
-
-    Transaction.hasMany(models.Payment, {
-      foreignKey: 'transactionId',
-      as: 'payments',
-      onDelete: 'CASCADE'
-    });
-  };
-
   return Transaction;
 };
+

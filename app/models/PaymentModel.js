@@ -1,8 +1,95 @@
-const { DataTypes } = require('sequelize');
-const { v4: uuidv4 } = require('uuid');
+"use strict";
+const { Model, DataTypes } = require('sequelize');
 
-module.exports = (sequelize) => {
-  const Payment = sequelize.define('Payment', {
+module.exports = (sequelize, DataTypes) => {
+  class Payment extends Model {
+    static associate(models) {
+      Payment.belongsTo(models.Transaction, {
+        foreignKey: 'transactionId',
+        as: 'transaction',
+        onDelete: 'CASCADE'
+      });
+
+      Payment.belongsTo(models.User, {
+        foreignKey: 'createdBy',
+        as: 'createdByUser',
+        onDelete: 'SET NULL'
+      });
+
+      Payment.belongsTo(models.User, {
+        foreignKey: 'updatedBy',
+        as: 'updatedByUser',
+        onDelete: 'SET NULL'
+      });
+    }
+
+    validateStatusTransitions() {
+      const allowedTransitions = {
+        'INITIATED': ['PENDING', 'FAILED', 'CANCELLED'],
+        'PENDING': ['AUTHORIZED', 'FAILED', 'CANCELLED'],
+        'AUTHORIZED': ['CAPTURED', 'FAILED', 'CANCELLED'],
+        'CAPTURED': ['SETTLED', 'REFUNDED'],
+        'SETTLED': ['REFUNDED'],
+        'FAILED': ['PENDING'],
+        'CANCELLED': [],
+        'REFUNDED': []
+      };
+
+      const previousStatus = this._previousDataValues?.paymentStatus || 'INITIATED';
+      const currentStatus = this.paymentStatus;
+
+      if (!allowedTransitions[previousStatus]?.includes(currentStatus)) {
+        throw new Error(`Invalid payment status transition from ${previousStatus} to ${currentStatus}`);
+      }
+    }
+
+    validateCardExpiryYear() {
+      if (this.cardExpiryYear) {
+        const currentYear = new Date().getFullYear();
+        if (this.cardExpiryYear < currentYear || this.cardExpiryYear > currentYear + 20) {
+          throw new Error('Card expiry year must be between current year and 20 years from now');
+        }
+      }
+    }
+
+    validatePaymentMethod() {
+      const cardMethods = ['CREDIT_CARD', 'DEBIT_CARD'];
+      const cashMethods = ['CASH', 'BANK_TRANSFER'];
+      const digitalMethods = ['DIGITAL_WALLET'];
+
+      // Card-specific validations
+      if (cardMethods.includes(this.paymentMethod)) {
+        if (!this.cardLast4 || !this.cardBrand || !this.cardExpiryMonth || !this.cardExpiryYear) {
+          throw new Error('Card details are required for card payment methods');
+        }
+      }
+
+      // Cash/bank transfer validations
+      if (cashMethods.includes(this.paymentMethod)) {
+        if (this.cardLast4 || this.cardBrand || this.cardExpiryMonth || this.cardExpiryYear) {
+          throw new Error('Card details should not be set for cash/bank transfer methods');
+        }
+      }
+
+      // Gateway-specific validations
+      const requiresGatewayId = ['STRIPE', 'PAYPAL', 'RAZORPAY', 'FLUTTERWAVE', 'PAYSTACK'];
+      if (requiresGatewayId.includes(this.gatewayProvider)) {
+        if (!this.gatewayTransactionId) {
+          throw new Error('Gateway transaction ID is required for non-cash providers');
+        }
+      }
+
+      // Advanced statuses require gateway info
+      const advancedStatuses = ['AUTHORIZED', 'CAPTURED', 'SETTLED'];
+      if (advancedStatuses.includes(this.paymentStatus) && this.gatewayProvider !== 'CASH') {
+        if (!this.gatewayTransactionId) {
+          throw new Error('Gateway transaction ID is required for advanced payment statuses');
+        }
+      }
+    }
+  }
+
+  Payment.init({
     paymentId: {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
@@ -14,7 +101,7 @@ module.exports = (sequelize) => {
       allowNull: false,
       references: {
         model: 'transactions',
-        key: 'transactionId'
+        key: 'transaction_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'CASCADE'
@@ -157,11 +244,7 @@ module.exports = (sequelize) => {
     },
     cardExpiryYear: {
       type: DataTypes.INTEGER,
-      allowNull: true,
-      validate: {
-        min: new Date().getFullYear(),
-        max: new Date().getFullYear() + 20
-      }
+      allowNull: true
     },
     webhookReceived: {
       type: DataTypes.BOOLEAN,
@@ -185,7 +268,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'users',
-        key: 'userId'
+        key: 'user_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -195,7 +278,7 @@ module.exports = (sequelize) => {
       allowNull: true,
       references: {
         model: 'users',
-        key: 'userId'
+        key: 'user_id'
       },
       onUpdate: 'CASCADE',
       onDelete: 'SET NULL'
@@ -203,44 +286,71 @@ module.exports = (sequelize) => {
     auditLog: {
       type: DataTypes.JSON,
       allowNull: true,
-      defaultValue: []
+      defaultValue: () => []
     }
   }, {
+    sequelize,
     tableName: 'payments',
     underscored: true,
     paranoid: true,
     timestamps: true,
     indexes: [
       {
-        fields: ['transactionId']
+        fields: ['transaction_id']
       },
       {
-        fields: ['gatewayProvider']
+        fields: ['gateway_provider']
       },
       {
-        fields: ['paymentStatus']
+        fields: ['payment_status']
       },
       {
-        fields: ['gatewayTransactionId']
+        fields: ['gateway_transaction_id']
       },
       {
-        fields: ['gatewayReference']
+        fields: ['gateway_reference']
       },
       {
-        fields: ['paymentMethod']
+        fields: ['payment_method']
       },
       {
-        fields: ['createdBy']
+        fields: ['created_by']
       },
       {
-        fields: ['createdAt']
+        fields: ['created_at']
       }
     ],
     hooks: {
       beforeCreate: (payment) => {
         payment.initiatedAt = new Date();
+        
+        // Set timestamps based on initial status
+        if (payment.paymentStatus === 'AUTHORIZED') {
+          payment.authorizedAt = new Date();
+        } else if (payment.paymentStatus === 'CAPTURED') {
+          payment.authorizedAt = new Date();
+          payment.capturedAt = new Date();
+        } else if (payment.paymentStatus === 'SETTLED') {
+          payment.authorizedAt = new Date();
+          payment.capturedAt = new Date();
+          payment.settledAt = new Date();
+        } else if (payment.paymentStatus === 'FAILED') {
+          payment.failedAt = new Date();
+        }
+
+        // Add initial audit log entry
+        const auditEntry = {
+          timestamp: new Date().toISOString(),
+          status: payment.paymentStatus,
+          previousStatus: null,
+          updatedBy: payment.createdBy || 'system'
+        };
+        payment.auditLog = [auditEntry];
       },
       beforeUpdate: (payment) => {
+        // Validate status transitions
+        payment.validateStatusTransitions();
+        
         const previousStatus = payment._previousDataValues?.paymentStatus;
         const currentStatus = payment.paymentStatus;
         
@@ -262,10 +372,6 @@ module.exports = (sequelize) => {
         }
 
         // Update audit log
-        if (!payment.auditLog) {
-          payment.auditLog = [];
-        }
-        
         const auditEntry = {
           timestamp: new Date().toISOString(),
           status: currentStatus,
@@ -273,30 +379,36 @@ module.exports = (sequelize) => {
           updatedBy: payment.updatedBy || 'system'
         };
         
-        payment.auditLog.push(auditEntry);
+        payment.set('auditLog', [...(payment.auditLog || []), auditEntry]);
+      },
+      beforeSave: (payment) => {
+        // Set timestamps based on initial status on create
+        if (payment.isNewRecord) {
+          if (payment.paymentStatus === 'AUTHORIZED') {
+            payment.authorizedAt = new Date();
+          } else if (payment.paymentStatus === 'CAPTURED') {
+            payment.authorizedAt = new Date();
+            payment.capturedAt = new Date();
+          } else if (payment.paymentStatus === 'SETTLED') {
+            payment.authorizedAt = new Date();
+            payment.capturedAt = new Date();
+            payment.settledAt = new Date();
+          } else if (payment.paymentStatus === 'FAILED') {
+            payment.failedAt = new Date();
+          }
+        }
+      }
+    },
+    validate: {
+      validateCardExpiryYear() {
+        this.validateCardExpiryYear();
+      },
+      validatePaymentMethod() {
+        this.validatePaymentMethod();
       }
     }
   });
 
-  Payment.associate = (models) => {
-    Payment.belongsTo(models.Transaction, {
-      foreignKey: 'transactionId',
-      as: 'transaction',
-      onDelete: 'CASCADE'
-    });
-
-    Payment.belongsTo(models.User, {
-      foreignKey: 'createdBy',
-      as: 'createdByUser',
-      onDelete: 'SET NULL'
-    });
-
-    Payment.belongsTo(models.User, {
-      foreignKey: 'updatedBy',
-      as: 'updatedByUser',
-      onDelete: 'SET NULL'
-    });
-  };
-
   return Payment;
 };
+
