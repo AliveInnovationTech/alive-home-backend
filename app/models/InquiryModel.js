@@ -6,8 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     
     class Inquiry extends Model {
         static associate(models) {
-            // Association to PropertyListing
-            Inquiry.belongsTo(models.PropertyListing, {
+            Inquiry.belongsTo(models.Listing, {
                 foreignKey: 'listingId',
                 as: 'listing',
                 onDelete: 'CASCADE'
@@ -68,7 +67,7 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.UUID,
                 allowNull: false,
                 references: {
-                    model: 'property_listings',
+                    model: 'listings',
                     key: 'listing_id'
                 }
             },

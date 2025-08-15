@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'owner'
             });
 
-            Property.hasMany(models.PropertyListing, {
+            Property.hasMany(models.Listing, {
                 foreignKey: 'propertyId',
                 as: 'listings'
             });
@@ -179,10 +179,11 @@ module.exports = (sequelize, DataTypes) => {
             sequelize,
             modelName: "Property",
             tableName: "properties",
+            underscored: true,
             timestamps: true,
             indexes: [
                 { fields: ['city'] },
-                { fields: ['propertyType'] },
+                { fields: ['property_type'] },
                 { fields: ['ownerId'] },
                 { fields: ['latitude', 'longitude'], using: 'GIST' },
                 {
