@@ -1,11 +1,17 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
-const User = require("../models/UserModel");
+const sequelize = require("../../lib/database");
 const userValidator = require("../validators/UserValidator");
 const cloudinary = require("../utils/cloudinary");
 
-
-
+const getModels = () => {
+    if (!sequelize.models.User) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User
+    };
+};
 
 exports.createUser = async (body) => {
     try {
@@ -16,6 +22,8 @@ exports.createUser = async (body) => {
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
+
+        const { User } = getModels()
 
         const user = await User.create({
             email: body.email,
@@ -63,6 +71,7 @@ exports.createUser = async (body) => {
 
 
 exports.getUserById = async (userId) => {
+    const { User } = getModels()
     try {
         const user = await User.findById(userId);
         if (!user) {
@@ -92,6 +101,7 @@ exports.getUserById = async (userId) => {
 };
 
 exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
+    const {User} =getModels()
     try {
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
@@ -138,6 +148,7 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
 };
 
 exports.updateUser = async (file, userId, body) => {
+    const {User} =getModels()
     try {
         const validatorError = await userValidator.updateUser(body);
         if (validatorError) {
@@ -190,6 +201,7 @@ exports.updateUser = async (file, userId, body) => {
 };
 
 exports.deleteUser = async (userId) => {
+    const { User } = getModels();
     try {
         const user = await User.findById(userId);
         if (!user) {

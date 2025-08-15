@@ -1,6 +1,8 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
+const developerValidator = require("../validators/DeveloperValidator");
+const cloudinary = require("../utils/cloudinary")
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -12,9 +14,9 @@ const getModels = () => {
         Developer: sequelize.models.Developer
     };
 };
-const developerValidator = require("../validators/DeveloperValidator");
 
-exports.createDeveloperProfile = async (payload, user) => {
+
+exports.createDeveloperProfile = async (payload, user, file) => {
     try {
         const validatorError = await developerValidator.createDeveloperProfile(payload);
         if (validatorError) {
@@ -25,7 +27,7 @@ exports.createDeveloperProfile = async (payload, user) => {
         }
 
         const { User, Developer } = getModels();
-        
+
         // Check if user already has a developer profile
         const existingDeveloper = await Developer.findOne({
             where: { userId: user.userId }
@@ -38,16 +40,25 @@ exports.createDeveloperProfile = async (payload, user) => {
             };
         }
 
+        const result = await cloudinary.uploader.upload(file.path, {
+            folder: "Alive/developers",
+            resource_type: "image",
+            height: 400,
+            width: 400,
+            crop: "scale"
+
+        })
+
         const developer = await Developer.create({
             userId: user.userId,
             companyName: payload.companyName,
             cacRegNumber: payload.cacRegNumber,
             yearsInBusiness: payload.yearsInBusiness,
             projectsCompleted: payload.projectsCompleted || 0,
-            websiteUrl: payload.websiteUrl,
+            websiteUrl: result.secure_url,
             officeAddress: payload.officeAddress,
             companyLogoUrl: payload.companyLogoUrl,
-            cloudinary_id: payload.cloudinary_id || null
+            cloudinary_id: result.public_id
         });
 
         const developerWithUser = await Developer.findByPk(developer.developerId, {
@@ -55,7 +66,13 @@ exports.createDeveloperProfile = async (payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ]
         });
@@ -88,13 +105,19 @@ exports.createDeveloperProfile = async (payload, user) => {
 exports.getDeveloperProfile = async (developerId) => {
     try {
         const { User, Developer } = getModels();
-        
+
         const developer = await Developer.findByPk(developerId, {
             include: [
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ]
         });
@@ -142,7 +165,7 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
         }
 
         const { User, Developer } = getModels();
-        
+
         const developer = await Developer.findByPk(developerId);
         if (!developer) {
             return {
@@ -152,7 +175,7 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (developer.userId !== user.userId && user.role !== 'ADMIN') {
+        if (developer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -178,7 +201,13 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ]
         });
@@ -194,7 +223,8 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
                 officeAddress: updatedDeveloper.officeAddress,
                 companyLogoUrl: updatedDeveloper.companyLogoUrl,
                 isVerified: updatedDeveloper.isVerified,
-                user: updatedDeveloper.user
+                user: updatedDeveloper.user,
+                cloudinary_id: updatedDeveloper.cloudinary_id
             },
             statusCode: StatusCodes.OK
         };
@@ -211,7 +241,7 @@ exports.updateDeveloperProfile = async (developerId, payload, user) => {
 exports.getAllDevelopers = async (page = 1, limit = 10, search = '') => {
     try {
         const { User, Developer } = getModels();
-        
+
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -229,7 +259,13 @@ exports.getAllDevelopers = async (page = 1, limit = 10, search = '') => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ],
             offset,
@@ -273,7 +309,7 @@ exports.getAllDevelopers = async (page = 1, limit = 10, search = '') => {
 exports.deleteDeveloperProfile = async (developerId, user) => {
     try {
         const { User, Developer } = getModels();
-        
+
         const developer = await Developer.findByPk(developerId);
         if (!developer) {
             return {
@@ -282,8 +318,8 @@ exports.deleteDeveloperProfile = async (developerId, user) => {
             };
         }
 
-        // Check if user owns this profile or is admin
-        if (developer.userId !== user.userId && user.role !== 'ADMIN') {
+        // Check if user owns this profile or is admin or is super admin
+        if (developer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -311,9 +347,9 @@ exports.deleteDeveloperProfile = async (developerId, user) => {
 exports.verifyDeveloper = async (developerId, verified, user) => {
     try {
         const { User, Developer } = getModels();
-        
-        // Only admins can verify developers
-        if (user.role !== 'ADMIN') {
+
+        // Only admins can verify developers and super admin
+        if (user.role !== 'admin' && user.role !=='superadmin') {
             return {
                 error: "Unauthorized to verify developers",
                 statusCode: StatusCodes.FORBIDDEN
@@ -352,14 +388,21 @@ exports.verifyDeveloper = async (developerId, verified, user) => {
 exports.getMyDeveloperProfile = async (userId) => {
     try {
         const { User, Developer } = getModels();
-        
+
         const developer = await Developer.findOne({
             where: { userId },
             include: [
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });

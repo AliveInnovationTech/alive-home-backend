@@ -7,11 +7,18 @@ const crypto = require("crypto-random-string")
 const { Op } = require("sequelize");
 const Token = require("../models/TokenModel");
 const passwordValidator = require("../validators/PasswordValidator");
-const {sendEmailNotification} = require("../services/NotificationService")
+const { sendEmailNotification } = require("../services/NotificationService");
+const sequelize = require("../../lib/database");
 
-
-
-
+const getModels = () => {
+    if (!sequelize.models.User || !sequelize.models.Token) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User,
+        Token: sequelize.models.Token
+    };
+};
 
 exports.login = async (body) => {
     try {
@@ -23,6 +30,8 @@ exports.login = async (body) => {
             }
         }
         const { email, phoneNumber, password } = body;
+
+        const { User, Token } = getModels();
 
         const user = await User.findOne({ $or: [{ email }, { phoneNumber }] });
         if (!user) {
@@ -70,6 +79,8 @@ exports.login = async (body) => {
 }
 
 exports.me = async (body) => {
+
+    const { User, Token } = getModels();
     try {
         const user = await User.findById(body.userId);
         if (!user) {
@@ -110,7 +121,7 @@ exports.forgotPassword = async (body) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+        const { User, Token } = getModels();
         const { email } = body;
         const user = await User.findOne({ email });
         if (!user) {
@@ -120,12 +131,12 @@ exports.forgotPassword = async (body) => {
             };
         }
 
-      let token = await Token.findOne({
+        let token = await Token.findOne({
             where: {
                 userId: user.id,
                 type: 'PASSWORD_RESET',
                 expiresAt: {
-                    [Op.gt]: new Date() 
+                    [Op.gt]: new Date()
                 }
             }
         });
@@ -148,12 +159,12 @@ exports.forgotPassword = async (body) => {
         const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=/${user.id}/${newToken}`;
 
         await sendEmailNotification(
-            user.email, 
-            user.firstName, 
-            "Password Reset Request", 
+            user.email,
+            user.firstName,
+            "Password Reset Request",
             "forgotPassword",
             {
-            link: resetLink
+                link: resetLink
             }
         );
 
@@ -182,7 +193,7 @@ exports.resetPassword = async (body, userId, token) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+        const { User, Token } = getModels();
         //const { userId, token, newPassword } = body;
         const user = await User.findById(userId);
         if (!user) {
@@ -198,7 +209,7 @@ exports.resetPassword = async (body, userId, token) => {
                 token,
                 type: 'PASSWORD_RESET',
                 expiresAt: {
-                    [Op.gt]: new Date() 
+                    [Op.gt]: new Date()
                 }
             }
         });
@@ -216,13 +227,13 @@ exports.resetPassword = async (body, userId, token) => {
 
         return {
             data: {
-            user:{
-            userId: user.id,
-            message: "Password successfully reset"
-            },
-          statusCode: StatusCodes.OK
+                user: {
+                    userId: user.id,
+                    message: "Password successfully reset"
+                },
+                statusCode: StatusCodes.OK
+            }
         }
-    }
 
     } catch (e) {
         console.log("An unknown error occurred during password reset. Please try again later");
@@ -233,7 +244,7 @@ exports.resetPassword = async (body, userId, token) => {
     }
 }
 
-exports.changePassword = async(body, userId) => {
+exports.changePassword = async (body, userId) => {
     try {
         const validatorError = await passwordValidator.updatePassword(body);
         if (validatorError) {
@@ -242,7 +253,7 @@ exports.changePassword = async(body, userId) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-
+      const {User, Token} = getModels();
         const { oldPassword, newPassword } = body;
         const user = await User.findById(userId);
         if (!user) {

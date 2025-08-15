@@ -62,6 +62,15 @@ module.exports = (sequelize, DataTypes) => {
                 type: DataTypes.BOOLEAN,
                 defaultValue: false,
                 allowNull: false
+            },
+            cloudinary_id: {
+                type: DataTypes.STRING,
+                validate: {
+                    isUrl: {
+                        msg: 'Invalid URL format'
+                    }
+                },
+                defaultValue: null
             }
         },
         {

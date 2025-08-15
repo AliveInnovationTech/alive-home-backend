@@ -7,7 +7,7 @@ exports.createDeveloperProfile = async (req, res) => {
         error,
         statusCode,
         data
-    } = await developerService.createDeveloperProfile(req.body, req.user);
+    } = await developerService.createDeveloperProfile(req.body, req.user, req.file);
 
     if (error) return response.error(res, error, statusCode);
 

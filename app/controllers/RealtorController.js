@@ -43,7 +43,13 @@ exports.getAllRealtors = async (req, res) => {
         error,
         statusCode,
         data
-    } = await realtorService.getAllRealtors(req.query.page, req.query.limit, req.query.search, req.query.specialty, req.query.isVerified);
+    } = await realtorService.getAllRealtors(
+        req.query.page, 
+        req.query.limit, 
+        req.query.search, 
+        req.query.specialty, 
+        req.query.isVerified
+    );
 
     if (error) return response.error(res, error, statusCode);
 
