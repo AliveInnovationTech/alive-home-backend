@@ -27,7 +27,7 @@ exports.createProperty = async (body, files, userId) => {
             street: body.street,
             city: body.city,
             state: body.state,
-            country: body.country || 'USA',
+            country: body.country || 'NG',
             zipCode: body.zipCode,
             propertyType: body.propertyType,
             bedrooms: body.bedrooms,
@@ -57,7 +57,7 @@ exports.createProperty = async (body, files, userId) => {
                         mediaUrl: result.secure_url,
                         mediaType: 'IMAGE',
                         cloudinaryId: result.public_id,
-                        isPrimary: mediaUrls.length === 0 // First image as primary
+                        isPrimary: mediaUrls.length === 0 
                     });
 
                     mediaUrls.push(result.secure_url);
@@ -67,7 +67,6 @@ exports.createProperty = async (body, files, userId) => {
             }
         }
 
-        // Fetch property with associations
         const propertyWithDetails = await Property.findByPk(property.propertyId, {
             include: [
                 {
@@ -83,8 +82,12 @@ exports.createProperty = async (body, files, userId) => {
             ]
         });
 
-        logInfo('Property created successfully', { propertyId: property.propertyId, ownerId: userId, mediaCount: mediaUrls.length });
-        
+        logInfo('Property created successfully', { 
+            propertyId: property.propertyId,
+            ownerId: userId,
+            mediaCount: mediaUrls.length
+        });
+
         return {
             data: {
                 property: propertyWithDetails,
@@ -149,7 +152,6 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
 
-        // Build where clause based on filters
         const whereClause = {};
         
         if (filters.city) {
@@ -303,7 +305,6 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
 
         await Property.update(updateData, { where: { propertyId } });
 
-        // Handle new media uploads
         if (files && files.length > 0) {
             for (const file of files) {
                 try {

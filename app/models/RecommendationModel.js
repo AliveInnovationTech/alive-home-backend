@@ -79,7 +79,15 @@ module.exports = (sequelize, DataTypes) => {
                 onUpdate: 'CASCADE'
             },
             recommendationType: {
-                type: DataTypes.ENUM('SIMILAR_PROPERTY', 'PRICE_DROP', 'NEW_LISTING', 'LOCATION_BASED', 'PREFERENCE_MATCH', 'TRENDING', 'SEASONAL', 'MARKET_INSIGHT'),
+                type: DataTypes.ENUM(
+                    'SIMILAR_PROPERTY',
+                    'PRICE_DROP',
+                    'NEW_LISTING',
+                    'LOCATION_BASED',
+                    'PREFERENCE_MATCH',
+                    'TRENDING',
+                    'SEASONAL',
+                    'MARKET_INSIGHT'),
                 allowNull: false,
                 validate: {
                     notEmpty: {
@@ -193,7 +201,13 @@ module.exports = (sequelize, DataTypes) => {
                 comment: 'Features used by the recommendation model'
             },
             status: {
-                type: DataTypes.ENUM('ACTIVE', 'VIEWED', 'CLICKED', 'DISMISSED', 'EXPIRED', 'ARCHIVED'),
+                type: DataTypes.ENUM(
+                    'ACTIVE',
+                    'VIEWED',
+                    'CLICKED',
+                    'DISMISSED',
+                    'EXPIRED',
+                    'ARCHIVED'),
                 allowNull: false,
                 defaultValue: 'ACTIVE',
                 validate: {
@@ -243,6 +257,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
             tableName: 'recommendations',
+            sequelize,
             underscored: true,
             paranoid: true,
             timestamps: true,
@@ -289,13 +304,10 @@ module.exports = (sequelize, DataTypes) => {
             ],
             hooks: {
                 beforeCreate: (recommendation) => {
-                    // Calculate priority based on confidence and relevance scores
                     if (!recommendation.priority || recommendation.priority === 5) {
                         const avgScore = (recommendation.confidenceScore + recommendation.relevanceScore) / 2;
                         recommendation.priority = Math.round(avgScore * 10);
                     }
-
-                    // Set expiration date for certain recommendation types
                     if (!recommendation.expiresAt) {
                         const expirationDays = {
                             'PRICE_DROP': 7,
@@ -304,16 +316,15 @@ module.exports = (sequelize, DataTypes) => {
                             'SEASONAL': 30,
                             'MARKET_INSIGHT': 7
                         };
-                        
+
                         const days = expirationDays[recommendation.recommendationType] || 30;
                         recommendation.expiresAt = new Date(Date.now() + (days * 24 * 60 * 60 * 1000));
                     }
                 },
                 beforeUpdate: (recommendation) => {
-                    // Update timestamps based on status changes
                     const previousStatus = recommendation._previousDataValues?.status;
                     const currentStatus = recommendation.status;
-                    
+
                     if (previousStatus !== currentStatus) {
                         switch (currentStatus) {
                             case 'VIEWED':

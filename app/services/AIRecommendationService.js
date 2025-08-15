@@ -15,9 +15,8 @@ const OPENAI_TEMPERATURE = parseFloat(process.env.OPENAI_TEMPERATURE) || 0.7;
 // Initialize OpenAI client
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
-// Haversine formula to calculate distance between two coordinates
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth's radius in kilometers
+    const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -27,16 +26,15 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
     return R * c;
 };
 
-// Calculate proximity score based on distance
 const calculateProximityScore = (distance) => {
     if (distance <= 5) return 1.0; // Within 5km
     if (distance <= 10) return 0.8; // Within 10km
     if (distance <= 20) return 0.6; // Within 20km
     if (distance <= 50) return 0.4; // Within 50km
-    return 0.2; // Beyond 50km
+    return 0.2;
 };
 
-// Analyze user behavior to extract preferences
+
 const analyzeUserBehavior = async (userId) => {
     try {
         const behaviors = await UserBehavior.findAll({
@@ -45,7 +43,16 @@ const analyzeUserBehavior = async (userId) => {
                 {
                     model: Property,
                     as: 'property',
-                    attributes: ['propertyId', 'title', 'propertyType', 'bedrooms', 'bathrooms', 'price', 'city', 'state']
+                    attributes: [
+                        'propertyId',
+                        'title',
+                        'propertyType',
+                        'bedrooms',
+                        'bathrooms',
+                        'price',
+                        'city',
+                        'state'
+                    ]
                 }
             ],
             order: [['createdAt', 'DESC']],
@@ -63,20 +70,16 @@ const analyzeUserBehavior = async (userId) => {
         };
 
         behaviors.forEach(behavior => {
-            // Apply time decay factor (weight = exp(-days/30))
             const daysSince = (new Date() - new Date(behavior.createdAt)) / (1000 * 60 * 60 * 24);
             const timeDecay = Math.exp(-daysSince / 30);
-            
-            // Get interaction score with fallback
+
             const interactionScore = behavior.interactionScore || 1;
             const weight = timeDecay * interactionScore;
 
-            // Analyze search queries
             if (behavior.searchQuery) {
                 preferences.searchQueries.push(behavior.searchQuery);
             }
 
-            // Analyze search filters
             if (behavior.searchFilters) {
                 const filters = behavior.searchFilters;
                 if (filters.propertyType) {
@@ -98,7 +101,8 @@ const analyzeUserBehavior = async (userId) => {
 
             // Analyze search locations
             if (behavior.searchLocation) {
-                preferences.locations[behavior.searchLocation] = (preferences.locations[behavior.searchLocation] || 0) + weight;
+                preferences.locations[behavior.searchLocation] =
+                    (preferences.locations[behavior.searchLocation] || 0) + weight;
             }
 
             // Analyze property interactions
@@ -111,8 +115,8 @@ const analyzeUserBehavior = async (userId) => {
 
                 // Calculate interaction scores based on behavior type
                 const score = behavior.behaviorType === 'PROPERTY_FAVORITE' ? 3 :
-                            behavior.behaviorType === 'SCHEDULE_VIEWING' ? 2 :
-                            behavior.behaviorType === 'CONTACT_AGENT' ? 2 :
+                    behavior.behaviorType === 'SCHEDULE_VIEWING' ? 2 :
+                        behavior.behaviorType === 'CONTACT_AGENT' ? 2 :
                             behavior.behaviorType === 'PROPERTY_VIEW' ? 1 : 0.5;
 
                 preferences.interactionScores[property.propertyId] = (preferences.interactionScores[property.propertyId] || 0) + score * weight;
@@ -121,30 +125,30 @@ const analyzeUserBehavior = async (userId) => {
 
         // Get top preferences
         const topPropertyTypes = Object.entries(preferences.propertyTypes)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
             .map(([type]) => type);
 
         const topLocations = Object.entries(preferences.locations)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
             .map(([location]) => location);
 
         const topBedrooms = Object.entries(preferences.bedrooms)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
             .map(([bedrooms]) => parseInt(bedrooms));
 
         const topBathrooms = Object.entries(preferences.bathrooms)
-            .sort(([,a], [,b]) => b - a)
+            .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
             .map(([bathrooms]) => parseInt(bathrooms));
 
         // Set priceRange to null unless both min and max are > 0 and min <= max
-        const priceRange = preferences.priceRange.min !== Infinity && 
-                          preferences.priceRange.max > 0 && 
-                          preferences.priceRange.min <= preferences.priceRange.max ? 
-                          preferences.priceRange : null;
+        const priceRange = preferences.priceRange.min !== Infinity &&
+            preferences.priceRange.max > 0 &&
+            preferences.priceRange.min <= preferences.priceRange.max ?
+            preferences.priceRange : null;
 
         return {
             topPropertyTypes,
@@ -174,9 +178,9 @@ User Preferences:
 - Recent Search Queries: ${userPreferences.searchQueries.join(', ') || 'None'}
 
 Available Properties (${availableProperties.length} properties):
-${availableProperties.map(prop => 
-    `- ${prop.title} (${prop.propertyType}): ${prop.bedrooms} bed, ${prop.bathrooms} bath, $${Number(prop.price).toLocaleString('en-US')}, ${prop.city}, ${prop.state}`
-).join('\n')}
+${availableProperties.map(prop =>
+        `- ${prop.title} (${prop.propertyType}): ${prop.bedrooms} bed, ${prop.bathrooms} bath, $${Number(prop.price).toLocaleString('en-US')}, ${prop.city}, ${prop.state}`
+    ).join('\n')}
 
 User Location: ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'Not available'}
 
@@ -207,27 +211,27 @@ Return only valid JSON array with the following structure:
 const processOpenAIResponse = (response) => {
     try {
         const content = response.choices[0].message.content;
-        
+
         // Extract JSON between first `[` and matching `]`
         let jsonStart = content.indexOf('[');
         let jsonEnd = content.lastIndexOf(']');
-        
+
         if (jsonStart === -1 || jsonEnd === -1) {
             throw new Error('No JSON array found in response');
         }
-        
+
         // Extract the JSON part
         let jsonContent = content.substring(jsonStart, jsonEnd + 1);
-        
+
         // Strip ```json code fences if present
         if (jsonContent.includes('```json')) {
             jsonContent = jsonContent.replace(/```json\s*/, '').replace(/\s*```/, '');
         } else if (jsonContent.includes('```')) {
             jsonContent = jsonContent.replace(/```\s*/, '').replace(/\s*```/, '');
         }
-        
+
         const recommendations = JSON.parse(jsonContent);
-        
+
         if (!Array.isArray(recommendations)) {
             throw new Error('Invalid response format from OpenAI');
         }
@@ -237,11 +241,11 @@ const processOpenAIResponse = (response) => {
             if (!rec.propertyId || typeof rec.propertyId !== 'string') {
                 throw new Error('Invalid propertyId in recommendation');
             }
-            
+
             // Coerce scores to numbers
             const relevanceScore = Number(rec.relevanceScore) || 50;
             const confidenceLevel = rec.confidenceLevel || 'MEDIUM';
-            
+
             return {
                 propertyId: rec.propertyId,
                 relevanceScore: Math.min(100, Math.max(0, relevanceScore)),
@@ -256,10 +260,8 @@ const processOpenAIResponse = (response) => {
     }
 };
 
-// Generate personalized recommendations
 exports.generatePersonalizedRecommendations = async (userId, userLocation = null, limit = 10) => {
     try {
-        // Validate user exists
         const user = await User.findByPk(userId);
         if (!user) {
             return {
@@ -268,7 +270,6 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
             };
         }
 
-        // Analyze user behavior
         const userPreferences = await analyzeUserBehavior(userId);
         if (!userPreferences) {
             return {
@@ -277,7 +278,6 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
             };
         }
 
-        // Get available properties
         const availableProperties = await Property.findAll({
             where: {
                 isActive: true,
@@ -291,7 +291,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                     required: false
                 }
             ],
-            limit: 50 // Limit for AI processing
+            limit: 50 
         });
 
         if (availableProperties.length === 0) {
@@ -301,7 +301,6 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
             };
         }
 
-        // Calculate proximity scores if user location is available
         const propertiesWithProximity = availableProperties.map(property => {
             let proximityScore = 0;
             if (userLocation && property.latitude && property.longitude) {
@@ -327,7 +326,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
         if (!OPENAI_API_KEY) {
             // Fallback to heuristic recommendations when OpenAI is unavailable
             logger.warn("OpenAI API key not configured, using fallback recommendations");
-            
+
             const fallbackRecommendations = propertiesWithProximity
                 .sort((a, b) => b.proximityScore - a.proximityScore)
                 .slice(0, limit)
@@ -338,7 +337,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                     recommendationType: 'PREFERENCE_MATCH',
                     confidenceLevel: 'MEDIUM'
                 }));
-            
+
             // Create recommendation records for fallback
             const recommendationRecords = [];
             for (const aiRec of fallbackRecommendations) {
@@ -417,7 +416,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
 
         // Process OpenAI response
         const aiRecommendations = processOpenAIResponse(openaiResponse);
-        
+
         if (aiRecommendations.length === 0) {
             return {
                 error: "Unable to generate AI recommendations",
@@ -432,7 +431,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                 // Calculate distance and location data if available
                 let distanceKm = null;
                 let propertyLocation = null;
-                
+
                 if (userLocation) {
                     const property = availableProperties.find(p => p.propertyId === aiRec.propertyId);
                     if (property && property.latitude && property.longitude) {
@@ -510,7 +509,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
 
     } catch (error) {
         logger.error("Error generating personalized recommendations:", error);
-        
+
         if (error.status === 401) {
             return {
                 error: "OpenAI API authentication failed",
@@ -534,7 +533,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
 exports.getUserRecommendations = async (userId, page = 1, limit = 10) => {
     try {
         const offset = (page - 1) * limit;
-        
+
         const recommendations = await Recommendation.findAndCountAll({
             where: { userId },
             include: [
@@ -636,7 +635,7 @@ exports.getRecommendationAnalytics = async (userId) => {
         analytics.forEach(rec => {
             // Type distribution
             typeDistribution[rec.recommendationType] = (typeDistribution[rec.recommendationType] || 0) + 1;
-            
+
             // Average scores
             averageScores.confidence += rec.confidenceScore || 0;
             averageScores.relevance += rec.relevanceScore || 0;

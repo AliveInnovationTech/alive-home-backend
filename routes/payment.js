@@ -6,7 +6,6 @@ const PaymentService = require("../app/services/PaymentService");
 const { StatusCodes } = require("http-status-codes");
 const logger = require("../app/utils/logger");
 
-// Webhook endpoints
 router.post("/webhooks/stripe", async (req, res) => {
     try {
         const rawBody = req.body.toString();

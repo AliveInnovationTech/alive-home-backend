@@ -44,7 +44,16 @@ module.exports = (sequelize, DataTypes) => {
                 onUpdate: 'CASCADE'
             },
             behaviorType: {
-                type: DataTypes.ENUM('SEARCH', 'PROPERTY_VIEW', 'PROPERTY_FAVORITE', 'PROPERTY_SHARE', 'CONTACT_AGENT', 'SCHEDULE_VIEWING', 'PRICE_ALERT', 'LOCATION_FAVORITE'),
+                type: DataTypes.ENUM(
+                    'SEARCH',
+                    'PROPERTY_VIEW',
+                    'PROPERTY_FAVORITE',
+                    'PROPERTY_SHARE',
+                    'CONTACT_AGENT',
+                    'SCHEDULE_VIEWING',
+                    'PRICE_ALERT',
+                    'LOCATION_FAVORITE'
+                ),
                 allowNull: false,
                 validate: {
                     notEmpty: {
@@ -186,6 +195,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
             tableName: 'user_behaviors',
+            sequelize,
             underscored: true,
             paranoid: true,
             timestamps: true,
@@ -217,7 +227,6 @@ module.exports = (sequelize, DataTypes) => {
             ],
             hooks: {
                 beforeCreate: (behavior) => {
-                    // Set default interaction score for certain behavior types
                     if (!behavior.interactionScore) {
                         const defaultScores = {
                             'PROPERTY_VIEW': 0.3,
