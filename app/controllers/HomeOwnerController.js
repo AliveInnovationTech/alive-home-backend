@@ -43,7 +43,11 @@ exports.getAllHomeOwners = async (req, res) => {
         error,
         statusCode,
         data
-    } = await homeOwnerService.getAllHomeOwners(req.query.page, req.query.limit, req.query.search);
+    } = await homeOwnerService.getAllHomeOwners(
+        req.query.page,
+        req.query.limit,
+        req.query.search
+    );
 
     if (error) return response.error(res, error, statusCode);
 
@@ -67,7 +71,11 @@ exports.verifyHomeOwner = async (req, res) => {
         error,
         statusCode,
         data
-    } = await homeOwnerService.verifyHomeOwner(req.params.ownerId, req.body.verified, req.user);
+    } = await homeOwnerService.verifyHomeOwner(
+        req.params.ownerId,
+        req.body.verified,
+        req.user
+    );
 
     if (error) return response.error(res, error, statusCode);
 
@@ -91,7 +99,8 @@ exports.uploadVerificationDocuments = async (req, res) => {
         error,
         statusCode,
         data
-    } = await homeOwnerService.uploadVerificationDocuments(req.params.ownerId, req.files, req.user);
+    } = await homeOwnerService
+        .uploadVerificationDocuments(req.params.ownerId, req.files, req.user);
 
     if (error) return response.error(res, error, statusCode);
 

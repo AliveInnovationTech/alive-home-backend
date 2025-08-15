@@ -1,8 +1,11 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
+const homeOwnerValidator = require("../validators/HomeOwnerValidator");
+const cloudinary = require("../utils/cloudinary");
 
-// Wait for models to be loaded
+
+
 const getModels = () => {
     if (!sequelize.models.User || !sequelize.models.Owner) {
         throw new Error('Models not loaded yet');
@@ -12,7 +15,7 @@ const getModels = () => {
         Owner: sequelize.models.Owner
     };
 };
-const homeOwnerValidator = require("../validators/HomeOwnerValidator");
+
 
 exports.createHomeOwnerProfile = async (payload, user) => {
     try {
@@ -25,7 +28,7 @@ exports.createHomeOwnerProfile = async (payload, user) => {
         }
 
         const { User, Owner } = getModels();
-        
+
         // Check if user already has a homeowner profile
         const existingOwner = await Owner.findOne({
             where: { userId: user.userId }
@@ -37,7 +40,7 @@ exports.createHomeOwnerProfile = async (payload, user) => {
                 statusCode: StatusCodes.CONFLICT
             };
         }
-        
+
         const owner = await Owner.create({
             userId: user.userId,
             primaryResidence: payload.primaryResidence,
@@ -51,7 +54,14 @@ exports.createHomeOwnerProfile = async (payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -80,13 +90,20 @@ exports.createHomeOwnerProfile = async (payload, user) => {
 exports.getHomeOwnerProfile = async (ownerId) => {
     try {
         const { User, Owner } = getModels();
-        
+
         const owner = await Owner.findByPk(ownerId, {
             include: [
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -130,7 +147,7 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
         }
 
         const { User, Owner } = getModels();
-        
+
         const owner = await Owner.findByPk(ownerId);
         if (!owner) {
             return {
@@ -139,8 +156,8 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
             };
         }
 
-        // Check if user owns this profile or is admin
-        if (owner.userId !== user.userId && user.role !== 'ADMIN') {
+        // Check if user owns this profile or is admin or superadmin
+        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -149,7 +166,9 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
 
         const updateData = {};
         const allowedFields = [
-            'primaryResidence', 'preferredContactMethod', 'verificationDocsUrls'
+            'primaryResidence',
+            'preferredContactMethod',
+            'verificationDocsUrls'
         ];
 
         allowedFields.forEach(field => {
@@ -165,7 +184,14 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -194,7 +220,7 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
 exports.getAllHomeOwners = async (page = 1, limit = 10, search = '') => {
     try {
         const { User, Owner } = getModels();
-        
+
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -212,7 +238,14 @@ exports.getAllHomeOwners = async (page = 1, limit = 10, search = '') => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ],
             offset,
@@ -260,8 +293,8 @@ exports.deleteHomeOwnerProfile = async (ownerId, user) => {
             };
         }
 
-        // Check if user owns this profile or is admin
-        if (owner.userId !== user.userId && user.role !== 'ADMIN') {
+        // Check if user owns this profile or is admin or superadmin
+        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -289,9 +322,9 @@ exports.deleteHomeOwnerProfile = async (ownerId, user) => {
 exports.verifyHomeOwner = async (ownerId, verified, user) => {
     try {
         const { User, Owner } = getModels();
-        
+
         // Only admins can verify homeowners
-        if (user.role !== 'ADMIN') {
+        if (user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to verify homeowners",
                 statusCode: StatusCodes.FORBIDDEN
@@ -336,7 +369,14 @@ exports.getMyHomeOwnerProfile = async (userId) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -381,7 +421,7 @@ exports.uploadVerificationDocuments = async (ownerId, files, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (owner.userId !== user.userId && user.role !== 'ADMIN') {
+        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to upload documents for this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -394,15 +434,22 @@ exports.uploadVerificationDocuments = async (ownerId, files, user) => {
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
-
-        // Here you would typically upload files to Cloudinary or similar service
-        // For now, we'll just store the file names
-        const uploadedUrls = files.map(file => file.filename);
-        
-        // Append new URLs to existing ones
+        // Upload files to Cloudinary and get their URLs
+        const uploadedUrls = [];
+        for (const file of files) {
+            const result = await cloudinary.uploadFile(file.path, {
+                folder: "homeowner_verification_docs"
+            });
+            if (result && result.secure_url) {
+                uploadedUrls.push(result.secure_url, result.public_id);
+            }
+        }
         const updatedUrls = [...(owner.verificationDocsUrls || []), ...uploadedUrls];
-        
-        await owner.update({ verificationDocsUrls: updatedUrls });
+
+        await owner.update({
+            verificationDocsUrls: updatedUrls,
+            cloudinary_ids: uploadedUrls.map(url => url.public_id)
+        });
 
         return {
             data: {

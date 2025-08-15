@@ -43,7 +43,14 @@ exports.getAllBuyers = async (req, res) => {
         error,
         statusCode,
         data
-    } = await buyerService.getAllBuyers(req.query.page, req.query.limit, req.query.search, req.query.propertyType, req.query.minBudget, req.query.maxBudget);
+    } = await buyerService.getAllBuyers(
+        req.query.page,
+        req.query.limit,
+        req.query.search,
+        req.query.propertyType,
+        req.query.minBudget,
+        req.query.maxBudget
+    );
 
     if (error) return response.error(res, error, statusCode);
 

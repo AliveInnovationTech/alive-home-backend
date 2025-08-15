@@ -1,6 +1,8 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
+const buyerValidator = require("../validators/BuyerValidator");
+
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -13,7 +15,6 @@ const getModels = () => {
     };
 };
 
-const buyerValidator = require("../validators/BuyerValidator");
 
 exports.createBuyerProfile = async (payload, user) => {
     try {
@@ -26,7 +27,7 @@ exports.createBuyerProfile = async (payload, user) => {
         }
 
         const { User, Buyer } = getModels();
-        
+
         // Check if user already has a buyer profile
         const existingBuyer = await Buyer.findOne({
             where: { userId: user.userId }
@@ -47,7 +48,6 @@ exports.createBuyerProfile = async (payload, user) => {
             preApprovalAmount: payload.preApprovalAmount,
             preferredLocations: payload.preferredLocations || [],
             propertyType: payload.propertyType || 'HOUSE',
-            cloudinary_id: payload.cloudinary_id || null
         });
 
         const buyerWithUser = await Buyer.findByPk(buyer.buyerId, {
@@ -55,7 +55,14 @@ exports.createBuyerProfile = async (payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -86,13 +93,20 @@ exports.createBuyerProfile = async (payload, user) => {
 exports.getBuyerProfile = async (buyerId) => {
     try {
         const { User, Buyer } = getModels();
-        
+
         const buyer = await Buyer.findByPk(buyerId, {
             include: [
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -138,7 +152,7 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
         }
 
         const { User, Buyer } = getModels();
-        
+
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {
             return {
@@ -148,7 +162,7 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'ADMIN') {
+        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -157,8 +171,10 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
 
         const updateData = {};
         const allowedFields = [
-            'minimumBudget', 'maximumBudget', 'preferredLocations', 
-            'propertyType', 'cloudinary_id'
+            'minimumBudget',
+            'maximumBudget',
+            'preferredLocations',
+            'propertyType',
         ];
 
         allowedFields.forEach(field => {
@@ -174,7 +190,13 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ]
         });
@@ -205,13 +227,13 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
 exports.getAllBuyers = async (page = 1, limit = 10, search = '', propertyType = '', minBudget = '', maxBudget = '') => {
     try {
         const { User, Buyer } = getModels();
-        
+
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
 
         const whereClause = {};
-        
+
         // Search by user name or email
         if (search) {
             whereClause['$user.firstName$'] = {
@@ -243,7 +265,13 @@ exports.getAllBuyers = async (page = 1, limit = 10, search = '', propertyType = 
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl']
                 }
             ],
             offset,
@@ -285,7 +313,7 @@ exports.getAllBuyers = async (page = 1, limit = 10, search = '', propertyType = 
 exports.deleteBuyerProfile = async (buyerId, user) => {
     try {
         const { User, Buyer } = getModels();
-        
+
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {
             return {
@@ -295,7 +323,7 @@ exports.deleteBuyerProfile = async (buyerId, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'ADMIN') {
+        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -320,6 +348,8 @@ exports.deleteBuyerProfile = async (buyerId, user) => {
     }
 };
 
+
+
 exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
     try {
         const validatorError = await buyerValidator.updatePreApprovalStatus(payload);
@@ -331,7 +361,7 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
         }
 
         const { User, Buyer } = getModels();
-        
+
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {
             return {
@@ -341,7 +371,7 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'ADMIN') {
+        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -363,7 +393,14 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -394,14 +431,21 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
 exports.getMyBuyerProfile = async (userId) => {
     try {
         const { User, Buyer } = getModels();
-        
+
         const buyer = await Buyer.findOne({
             where: { userId },
             include: [
                 {
                     model: User,
                     as: 'user',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber', 'profilePictureUrl']
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePictureUrl'
+                    ]
                 }
             ]
         });
@@ -438,8 +482,8 @@ exports.getMyBuyerProfile = async (userId) => {
 
 exports.searchProperties = async (buyerId, query) => {
     try {
-        const { User, Buyer } = getModels();
-        
+        const { Buyer } = getModels();
+
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {
             return {
@@ -475,9 +519,9 @@ exports.searchProperties = async (buyerId, query) => {
 
         // Filter properties based on buyer preferences
         const filteredProperties = mockProperties.filter(property => {
-            return property.price >= buyer.minimumBudget && 
-                   property.price <= buyer.maximumBudget &&
-                   (buyer.propertyType === 'HOUSE' || property.propertyType === buyer.propertyType);
+            return property.price >= buyer.minimumBudget &&
+                property.price <= buyer.maximumBudget &&
+                (buyer.propertyType === 'HOUSE' || property.propertyType === buyer.propertyType);
         });
 
         return {
