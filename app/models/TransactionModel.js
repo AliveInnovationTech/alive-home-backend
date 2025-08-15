@@ -11,17 +11,17 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE'
       });
 
-      Transaction.belongsTo(models.Property, {
-        foreignKey: 'propertyId',
-        as: 'property',
-        onDelete: 'SET NULL'
-      });
+      // Transaction.belongsTo(models.Property, {
+      //   foreignKey: 'propertyId',
+      //   as: 'property',
+      //   onDelete: 'SET NULL'
+      // });
 
-      Transaction.belongsTo(models.UserSubscription, {
-        foreignKey: 'subscriptionId',
-        as: 'subscription',
-        onDelete: 'SET NULL'
-      });
+      // Transaction.belongsTo(models.UserSubscription, {
+      //   foreignKey: 'subscriptionId',
+      //   as: 'subscription',
+      //   onDelete: 'SET NULL'
+      // });
 
       Transaction.belongsTo(models.User, {
         foreignKey: 'commissionRecipientId',
@@ -105,7 +105,13 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'SET NULL'
     },
     transactionType: {
-      type: DataTypes.ENUM('SUBSCRIPTION_PAYMENT', 'PROPERTY_PURCHASE', 'COMMISSION_PAYMENT', 'REFUND', 'DEPOSIT', 'WITHDRAWAL'),
+      type: DataTypes.ENUM(
+        'SUBSCRIPTION_PAYMENT',
+        'PROPERTY_PURCHASE',
+        'COMMISSION_PAYMENT',
+        'REFUND',
+        'DEPOSIT',
+        'WITHDRAWAL'),
       allowNull: false,
       validate: {
         notEmpty: true
@@ -124,10 +130,21 @@ module.exports = (sequelize, DataTypes) => {
     currency: {
       type: DataTypes.STRING(3),
       allowNull: false,
-      defaultValue: 'USD',
+      defaultValue: 'NGN',
       validate: {
         len: [3, 3],
-        isIn: [['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'INR', 'NGN', 'GHS', 'KES', 'ZAR']]
+        isIn: [[
+          'USD',
+          'EUR',
+          'GBP',
+          'CAD',
+          'AUD',
+          'JPY',
+          'INR',
+          'NGN',
+          'GHS',
+          'KES',
+          'ZAR']]
       }
     },
     originalAmount: {
@@ -146,7 +163,14 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     status: {
-      type: DataTypes.ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'CANCELLED', 'REFUNDED'),
+      type: DataTypes.ENUM(
+        'PENDING',
+        'PROCESSING',
+        'COMPLETED',
+        'FAILED',
+        'CANCELLED',
+        'REFUNDED'
+      ),
       allowNull: false,
       defaultValue: 'PENDING',
       validate: {
@@ -277,8 +301,7 @@ module.exports = (sequelize, DataTypes) => {
         if (!transaction.referenceNumber) {
           transaction.referenceNumber = `TXN-${Date.now()}-${crypto.randomUUID().substring(0, 8).toUpperCase()}`;
         }
-        
-        // Set timestamps based on initial status
+
         if (transaction.status === 'PROCESSING') {
           transaction.processedAt = new Date();
         } else if (transaction.status === 'COMPLETED') {
@@ -291,12 +314,11 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
       beforeUpdate: (transaction) => {
-        // Validate status transitions
         transaction.validateStatusTransitions();
-        
+
         const previousStatus = transaction._previousDataValues?.status;
         const currentStatus = transaction.status;
-        
+
         if (previousStatus !== currentStatus) {
           switch (currentStatus) {
             case 'PROCESSING':
@@ -315,7 +337,6 @@ module.exports = (sequelize, DataTypes) => {
         }
       },
       beforeSave: (transaction) => {
-        // Set timestamps based on initial status on create
         if (transaction.isNewRecord) {
           if (transaction.status === 'PROCESSING') {
             transaction.processedAt = new Date();
@@ -332,7 +353,6 @@ module.exports = (sequelize, DataTypes) => {
     },
     validate: {
       validateTransactionType() {
-        // Type-specific validations
         switch (this.transactionType) {
           case 'SUBSCRIPTION_PAYMENT':
             if (!this.subscriptionId) {
@@ -360,10 +380,10 @@ module.exports = (sequelize, DataTypes) => {
             break;
         }
 
-        // Commission math consistency
+
         if (this.commissionRate && this.commissionAmount) {
           const calculatedAmount = (this.amount * this.commissionRate) / 100;
-          const tolerance = 0.01; // Allow for rounding differences
+          const tolerance = 0.01;
           if (Math.abs(calculatedAmount - this.commissionAmount) > tolerance) {
             throw new Error('Commission amount does not match calculated amount from rate');
           }

@@ -57,21 +57,19 @@ module.exports = (sequelize, DataTypes) => {
       const cashMethods = ['CASH', 'BANK_TRANSFER'];
       const digitalMethods = ['DIGITAL_WALLET'];
 
-      // Card-specific validations
+
       if (cardMethods.includes(this.paymentMethod)) {
         if (!this.cardLast4 || !this.cardBrand || !this.cardExpiryMonth || !this.cardExpiryYear) {
           throw new Error('Card details are required for card payment methods');
         }
       }
 
-      // Cash/bank transfer validations
       if (cashMethods.includes(this.paymentMethod)) {
         if (this.cardLast4 || this.cardBrand || this.cardExpiryMonth || this.cardExpiryYear) {
           throw new Error('Card details should not be set for cash/bank transfer methods');
         }
       }
 
-      // Gateway-specific validations
       const requiresGatewayId = ['STRIPE', 'PAYPAL', 'RAZORPAY', 'FLUTTERWAVE', 'PAYSTACK'];
       if (requiresGatewayId.includes(this.gatewayProvider)) {
         if (!this.gatewayTransactionId) {
@@ -79,7 +77,6 @@ module.exports = (sequelize, DataTypes) => {
         }
       }
 
-      // Advanced statuses require gateway info
       const advancedStatuses = ['AUTHORIZED', 'CAPTURED', 'SETTLED'];
       if (advancedStatuses.includes(this.paymentStatus) && this.gatewayProvider !== 'CASH') {
         if (!this.gatewayTransactionId) {
@@ -107,7 +104,14 @@ module.exports = (sequelize, DataTypes) => {
       onDelete: 'CASCADE'
     },
     gatewayProvider: {
-      type: DataTypes.ENUM('STRIPE', 'PAYPAL', 'RAZORPAY', 'FLUTTERWAVE', 'PAYSTACK', 'BANK_TRANSFER', 'CASH'),
+      type: DataTypes.ENUM(
+        'STRIPE',
+        'PAYPAL',
+        'RAZORPAY',
+        'FLUTTERWAVE',
+        'PAYSTACK',
+        'BANK_TRANSFER',
+        'CASH'),
       allowNull: false,
       validate: {
         notEmpty: true
@@ -128,7 +132,13 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     paymentMethod: {
-      type: DataTypes.ENUM('CREDIT_CARD', 'DEBIT_CARD', 'BANK_TRANSFER', 'DIGITAL_WALLET', 'CASH', 'CHECK'),
+      type: DataTypes.ENUM(
+        'CREDIT_CARD',
+        'DEBIT_CARD',
+        'BANK_TRANSFER',
+        'DIGITAL_WALLET',
+        'CASH',
+        'CHECK'),
       allowNull: false,
       validate: {
         notEmpty: true
@@ -159,7 +169,15 @@ module.exports = (sequelize, DataTypes) => {
       }
     },
     paymentStatus: {
-      type: DataTypes.ENUM('INITIATED', 'PENDING', 'AUTHORIZED', 'CAPTURED', 'SETTLED', 'FAILED', 'CANCELLED', 'REFUNDED'),
+      type: DataTypes.ENUM(
+        'INITIATED',
+        'PENDING',
+        'AUTHORIZED',
+        'CAPTURED',
+        'SETTLED',
+        'FAILED',
+        'CANCELLED',
+        'REFUNDED'),
       allowNull: false,
       defaultValue: 'INITIATED',
       validate: {
@@ -323,8 +341,7 @@ module.exports = (sequelize, DataTypes) => {
     hooks: {
       beforeCreate: (payment) => {
         payment.initiatedAt = new Date();
-        
-        // Set timestamps based on initial status
+
         if (payment.paymentStatus === 'AUTHORIZED') {
           payment.authorizedAt = new Date();
         } else if (payment.paymentStatus === 'CAPTURED') {
@@ -338,7 +355,7 @@ module.exports = (sequelize, DataTypes) => {
           payment.failedAt = new Date();
         }
 
-        // Add initial audit log entry
+
         const auditEntry = {
           timestamp: new Date().toISOString(),
           status: payment.paymentStatus,
@@ -348,12 +365,11 @@ module.exports = (sequelize, DataTypes) => {
         payment.auditLog = [auditEntry];
       },
       beforeUpdate: (payment) => {
-        // Validate status transitions
         payment.validateStatusTransitions();
-        
+
         const previousStatus = payment._previousDataValues?.paymentStatus;
         const currentStatus = payment.paymentStatus;
-        
+
         if (previousStatus !== currentStatus) {
           switch (currentStatus) {
             case 'AUTHORIZED':
@@ -371,18 +387,16 @@ module.exports = (sequelize, DataTypes) => {
           }
         }
 
-        // Update audit log
         const auditEntry = {
           timestamp: new Date().toISOString(),
           status: currentStatus,
           previousStatus: previousStatus,
           updatedBy: payment.updatedBy || 'system'
         };
-        
+
         payment.set('auditLog', [...(payment.auditLog || []), auditEntry]);
       },
       beforeSave: (payment) => {
-        // Set timestamps based on initial status on create
         if (payment.isNewRecord) {
           if (payment.paymentStatus === 'AUTHORIZED') {
             payment.authorizedAt = new Date();
