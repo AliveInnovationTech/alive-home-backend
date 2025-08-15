@@ -231,20 +231,12 @@ exports.resetPassword = async (body, userId, token) => {
         
         return {
             data: {
-<<<<<<< Updated upstream
                 user: {
-                    userId: user.id,
+                    userId: user.userId,
                     message: "Password successfully reset"
-                },
-                statusCode: StatusCodes.OK
-            }
-=======
-            user:{
-            userId: user.userId,
-            message: "Password successfully reset"
+                }
             },
-          statusCode: StatusCodes.OK
->>>>>>> Stashed changes
+            statusCode: StatusCodes.OK
         }
 
     } catch (e) {
