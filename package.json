@@ -12,7 +12,6 @@
     "test": "jest --verbose -c jest.config.js",
     "migrate": "node lib/migrate.js",
     "seed": "node lib/seed.js",
-
     "seed:permissions": "node lib/seed-permissions.js",
     "migrate:seed": "npm run migrate && npm run seed",
     "migrate:seed:all": "npm run migrate && npm run seed && npm run seed:permissions"

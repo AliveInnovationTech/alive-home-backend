@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
                 },
                 onDelete: 'CASCADE'
             },
-           
+
             primaryResidence: {
                 type: DataTypes.STRING
             },
@@ -47,7 +47,17 @@ module.exports = (sequelize, DataTypes) => {
             verificationDocsUrls: {
                 type: DataTypes.ARRAY(DataTypes.TEXT),
                 defaultValue: []
+            },
+            cloudinary_id: {
+                type: DataTypes.STRING,
+                validate: {
+                    isUrl: {
+                        msg: 'Invalid URL format'
+                    }
+                },
+                defaultValue: null
             }
+
         },
         {
             sequelize,
