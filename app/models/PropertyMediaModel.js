@@ -35,7 +35,11 @@ module.exports = (sequelize, DataTypes) => {
                 onUpdate: 'CASCADE'
             },
             mediaType: {
-                type: DataTypes.ENUM('IMAGE', 'VIDEO', 'VIRTUAL_TOUR', 'FLOOR_PLAN'),
+                type: DataTypes.ENUM(
+                    'IMAGE',
+                    'VIDEO',
+                    'VIRTUAL_TOUR',
+                    'FLOOR_PLAN'),
                 allowNull: false,
                 defaultValue: 'IMAGE'
             },
@@ -222,7 +226,10 @@ module.exports = (sequelize, DataTypes) => {
 
     PropertyMedia.beforeSave(async (media, { transaction }) => {
         if (media.isMainImage) {
-            const count = await PropertyMedia.count({ where: { propertyId: media.propertyId, isMainImage: true }, transaction });
+            const count = await PropertyMedia.count({
+                where: { propertyId: media.propertyId, isMainImage: true },
+                transaction
+            });
             if (count > 0) throw new Error('Only one main image allowed per property');
         }
     });

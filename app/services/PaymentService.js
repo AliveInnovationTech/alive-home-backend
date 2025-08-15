@@ -15,9 +15,9 @@ const Flutterwave = require("flutterwave-node-v3");
 const Paystack = require("paystack")(process.env.PAYSTACK_SECRET_KEY);
 
 // Initialize PayPal environment
-const paypalEnvironment = process.env.PAYPAL_MODE === 'live' 
-  ? new paypal.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
-  : new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
+const paypalEnvironment = process.env.PAYPAL_MODE === 'sandbox'
+    ? new paypal.core.SandboxEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET)
+    : new paypal.core.LiveEnvironment(process.env.PAYPAL_CLIENT_ID, process.env.PAYPAL_CLIENT_SECRET);
 const paypalClient = new paypal.core.PayPalHttpClient(paypalEnvironment);
 
 // PayPal access token cache
@@ -26,8 +26,8 @@ let paypalTokenExpiry = null;
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET
 });
 
 // Initialize Flutterwave
@@ -95,7 +95,7 @@ exports.createTransaction = async (transactionData, userId) => {
         });
 
         logInfo('Transaction created successfully', { transactionId: transaction.transactionId, userId, amount: transaction.amount });
-        
+
         return {
             data: transaction,
             statusCode: StatusCodes.CREATED
@@ -135,7 +135,7 @@ exports.processTransaction = async (transactionId, paymentData) => {
         const paymentResult = await this.processPayment(payment.paymentId, paymentData);
 
         logInfo('Transaction processed successfully', { transactionId: transaction.transactionId, status: transaction.status });
-        
+
         return {
             data: {
                 transaction: transaction,
@@ -160,13 +160,13 @@ exports.updateTransactionStatus = async (transactionId, status, metadata = {}) =
             };
         }
 
-        await transaction.update({ 
+        await transaction.update({
             status: status,
             metadata: { ...transaction.metadata, ...metadata }
         });
 
         logInfo('Transaction status updated', { transactionId, oldStatus: transaction.status, newStatus: status });
-        
+
         return {
             data: transaction,
             statusCode: StatusCodes.OK
@@ -212,7 +212,7 @@ exports.getTransactionById = async (transactionId) => {
         }
 
         logInfo('Transaction retrieved successfully', { transactionId });
-        
+
         return {
             data: transaction,
             statusCode: StatusCodes.OK
@@ -226,7 +226,7 @@ exports.getTransactionById = async (transactionId) => {
 exports.getTransactionsByUser = async (userId, filters = {}) => {
     try {
         const whereClause = { userId };
-        
+
         if (filters.status) whereClause.status = filters.status;
         if (filters.transactionType) whereClause.transactionType = filters.transactionType;
         if (filters.startDate) whereClause.createdAt = { [Op.gte]: filters.startDate };
@@ -256,7 +256,7 @@ exports.getTransactionsByUser = async (userId, filters = {}) => {
         });
 
         logInfo('User transactions retrieved successfully', { userId, totalTransactions: transactions.length });
-        
+
         return {
             data: transactions,
             statusCode: StatusCodes.OK
@@ -312,7 +312,7 @@ exports.initiatePayment = async (paymentData) => {
         // For non-cash providers, create gateway session/intent immediately
         if (payment.gatewayProvider !== 'CASH' && payment.gatewayProvider !== 'BANK_TRANSFER') {
             let gatewayResponse;
-            
+
             try {
                 switch (payment.gatewayProvider) {
                     case 'STRIPE':
@@ -338,17 +338,17 @@ exports.initiatePayment = async (paymentData) => {
                     });
                 }
             } catch (error) {
-                logger.error(`Failed to create gateway session for ${payment.gatewayProvider}`, { 
-                    error: error.message, 
+                logger.error(`Failed to create gateway session for ${payment.gatewayProvider}`, {
+                    error: error.message,
                     stack: error.stack,
-                    paymentId: payment.paymentId 
+                    paymentId: payment.paymentId
                 });
                 // Continue with payment creation even if gateway session fails
             }
         }
 
         logInfo('Payment initiated successfully', { paymentId: payment.paymentId, gatewayProvider: payment.gatewayProvider });
-        
+
         return {
             data: payment,
             statusCode: StatusCodes.CREATED
@@ -373,7 +373,7 @@ exports.processPayment = async (paymentId, paymentData) => {
         await payment.update({ paymentStatus: 'PENDING' });
 
         let gatewayResponse;
-        
+
         // Process based on gateway provider
         switch (payment.gatewayProvider) {
             case 'STRIPE':
@@ -407,7 +407,7 @@ exports.processPayment = async (paymentId, paymentData) => {
         });
 
         logInfo('Payment processed successfully', { paymentId: payment.paymentId, gatewayProvider: payment.gatewayProvider });
-        
+
         return {
             data: {
                 payment: payment,
@@ -439,7 +439,7 @@ exports.capturePayment = async (paymentId, captureData = {}) => {
         }
 
         let captureResponse;
-        
+
         switch (payment.gatewayProvider) {
             case 'STRIPE':
                 captureResponse = await this.captureStripePayment(payment, captureData);
@@ -462,7 +462,7 @@ exports.capturePayment = async (paymentId, captureData = {}) => {
         });
 
         logInfo('Payment captured successfully', { paymentId, gatewayProvider: payment.gatewayProvider });
-        
+
         return {
             data: {
                 payment: payment,
@@ -494,7 +494,7 @@ exports.refundPayment = async (paymentId, refundData) => {
         }
 
         let refundResponse;
-        
+
         switch (payment.gatewayProvider) {
             case 'STRIPE':
                 refundResponse = await this.refundStripePayment(payment, refundData);
@@ -520,7 +520,6 @@ exports.refundPayment = async (paymentId, refundData) => {
         });
 
         logInfo('Payment refunded successfully', { paymentId, gatewayProvider: payment.gatewayProvider });
-
         return {
             data: {
                 payment: payment,
@@ -893,7 +892,7 @@ exports.processSubscriptionPayment = async (subscriptionId, paymentData) => {
         const subscriptionWithPlan = await UserSubscription.findByPk(subscriptionId, {
             include: [{ model: SubscriptionPlan, as: 'plan' }]
         });
-        
+
         if (!subscriptionWithPlan || !subscriptionWithPlan.plan) {
             return {
                 error: "Subscription or plan not found",
@@ -967,14 +966,14 @@ exports.handleRecurringBilling = async () => {
                     const subscriptionWithPlan = await UserSubscription.findByPk(subscription.subscriptionId, {
                         include: [{ model: SubscriptionPlan, as: 'plan' }]
                     });
-                    
+
                     if (subscriptionWithPlan && subscriptionWithPlan.plan) {
                         const nextBillingDate = new Date();
-                        const cycleMonths = subscriptionWithPlan.plan.billingCycleMonths || 
-                                           (subscriptionWithPlan.plan.billingCycle === 'MONTHLY' ? 1 : 
-                                            subscriptionWithPlan.plan.billingCycle === 'QUARTERLY' ? 3 : 12);
+                        const cycleMonths = subscriptionWithPlan.plan.billingCycleMonths ||
+                            (subscriptionWithPlan.plan.billingCycle === 'MONTHLY' ? 1 :
+                                subscriptionWithPlan.plan.billingCycle === 'QUARTERLY' ? 3 : 12);
                         nextBillingDate.setMonth(nextBillingDate.getMonth() + cycleMonths);
-                        
+
                         await subscription.update({
                             nextBillingDate: nextBillingDate,
                             lastBillingDate: new Date()
@@ -1044,7 +1043,7 @@ exports.processWebhook = async (gatewayProvider, rawBody, headers) => {
         const webhookData = typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody;
 
         let paymentUpdate;
-        
+
         switch (gatewayProvider) {
             case 'STRIPE':
                 paymentUpdate = await this.processStripeWebhook(webhookData);
@@ -1069,7 +1068,7 @@ exports.processWebhook = async (gatewayProvider, rawBody, headers) => {
         }
 
         logInfo('Webhook processed successfully', { gatewayProvider, webhookEventId: paymentUpdate.webhookEventId });
-        
+
         return {
             data: paymentUpdate,
             statusCode: StatusCodes.OK
@@ -1095,18 +1094,18 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                     process.env.STRIPE_WEBHOOK_SECRET
                 );
                 return !!stripeEvent;
-                
+
             case 'PAYPAL':
                 // PayPal webhook validation using their API
                 const paypalSignature = headers['paypal-transmission-sig'];
                 const paypalTimestamp = headers['paypal-transmission-time'];
                 const paypalWebhookId = headers['paypal-webhook-id'];
-                
+
                 if (!paypalSignature || !paypalTimestamp || !paypalWebhookId) {
                     logger.error("Missing PayPal signature headers");
                     return false;
                 }
-                
+
                 // Verify using PayPal's verification API
                 const verificationPayload = {
                     auth_algo: headers['paypal-auth-algo'],
@@ -1117,7 +1116,7 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                     webhook_id: process.env.PAYPAL_WEBHOOK_ID,
                     webhook_event: typeof rawBody === 'string' ? JSON.parse(rawBody) : rawBody
                 };
-                
+
                 const verificationResponse = await axios.post(
                     `${process.env.PAYPAL_MODE === 'live' ? 'https://api.paypal.com' : 'https://api.sandbox.paypal.com'}/v1/notifications/verify-webhook-signature`,
                     verificationPayload,
@@ -1128,9 +1127,9 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                         }
                     }
                 );
-                
+
                 return verificationResponse.data.verification_status === 'SUCCESS';
-                
+
             case 'RAZORPAY':
                 const razorpaySignature = headers['x-razorpay-signature'];
                 if (!razorpaySignature) {
@@ -1144,7 +1143,7 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                     Buffer.from(razorpaySignature),
                     Buffer.from(expectedSignature)
                 );
-                
+
             case 'FLUTTERWAVE':
                 const flutterwaveSignature = headers['verif-hash'];
                 if (!flutterwaveSignature) {
@@ -1158,7 +1157,7 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                     Buffer.from(flutterwaveSignature),
                     Buffer.from(expectedFlutterwaveSignature)
                 );
-                
+
             case 'PAYSTACK':
                 const paystackSignature = headers['x-paystack-signature'];
                 if (!paystackSignature) {
@@ -1172,7 +1171,7 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
                     Buffer.from(paystackSignature),
                     Buffer.from(expectedPaystackSignature)
                 );
-                
+
             default:
                 logWarning(`No signature validation implemented for ${gatewayProvider}`);
                 return true;
@@ -1187,16 +1186,16 @@ exports.validateWebhookSignature = async (gatewayProvider, rawBody, headers) => 
 exports.processStripeWebhook = async (webhookData) => {
     try {
         const event = webhookData;
-        
+
         switch (event.type) {
             case 'payment_intent.succeeded':
                 const paymentIntent = event.data.object;
                 return await this.updatePaymentFromWebhook(paymentIntent.metadata.paymentId, event);
-                
+
             case 'payment_intent.payment_failed':
                 const failedPayment = event.data.object;
                 return await this.updatePaymentFromWebhook(failedPayment.metadata.paymentId, event);
-                
+
             default:
                 return { message: 'Event type not handled', eventType: event.type };
         }
@@ -1208,16 +1207,16 @@ exports.processStripeWebhook = async (webhookData) => {
 exports.processPayPalWebhook = async (webhookData) => {
     try {
         const event = webhookData;
-        
+
         switch (event.event_type) {
             case 'PAYMENT.CAPTURE.COMPLETED':
                 const capture = event.resource;
                 return await this.updatePaymentFromWebhook(capture.custom_id, event);
-                
+
             case 'PAYMENT.CAPTURE.DENIED':
                 const deniedCapture = event.resource;
                 return await this.updatePaymentFromWebhook(deniedCapture.custom_id, event);
-                
+
             default:
                 return { message: 'Event type not handled', eventType: event.event_type };
         }
@@ -1229,16 +1228,16 @@ exports.processPayPalWebhook = async (webhookData) => {
 exports.processRazorpayWebhook = async (webhookData) => {
     try {
         const event = webhookData;
-        
+
         switch (event.event) {
             case 'payment.captured':
                 const payment = event.payload.payment.entity;
                 return await this.updatePaymentFromWebhook(payment.notes.paymentId, event);
-                
+
             case 'payment.failed':
                 const failedPayment = event.payload.payment.entity;
                 return await this.updatePaymentFromWebhook(failedPayment.notes.paymentId, event);
-                
+
             default:
                 return { message: 'Event type not handled', eventType: event.event };
         }
@@ -1250,13 +1249,13 @@ exports.processRazorpayWebhook = async (webhookData) => {
 exports.processFlutterwaveWebhook = async (webhookData) => {
     try {
         const event = webhookData;
-        
+
         if (event.status === 'successful') {
             return await this.updatePaymentFromWebhook(event.tx_ref, event);
         } else if (event.status === 'failed') {
             return await this.updatePaymentFromWebhook(event.tx_ref, event);
         }
-        
+
         return { message: 'Event status not handled', status: event.status };
     } catch (error) {
         throw new Error(`Flutterwave webhook processing failed: ${error.message}`);
@@ -1266,13 +1265,13 @@ exports.processFlutterwaveWebhook = async (webhookData) => {
 exports.processPaystackWebhook = async (webhookData) => {
     try {
         const event = webhookData;
-        
+
         if (event.status === 'success') {
             return await this.updatePaymentFromWebhook(event.data.reference, event);
         } else if (event.status === 'failed') {
             return await this.updatePaymentFromWebhook(event.data.reference, event);
         }
-        
+
         return { message: 'Event status not handled', status: event.status };
     } catch (error) {
         throw new Error(`Paystack webhook processing failed: ${error.message}`);
@@ -1299,14 +1298,14 @@ exports.updatePaymentFromWebhook = async (paymentId, webhookData) => {
 
         // Update payment status based on webhook data
         const newStatus = this.mapWebhookStatusToPaymentStatus(payment.gatewayProvider, webhookData);
-        
+
         // Sanitize webhook data before storing (remove sensitive information)
         const sanitizedWebhookData = this.sanitizeWebhookData(webhookData);
-        
+
         await payment.update({
             paymentStatus: newStatus,
-            gatewayResponse: { 
-                ...payment.gatewayResponse, 
+            gatewayResponse: {
+                ...payment.gatewayResponse,
                 webhook: sanitizedWebhookData,
                 processedWebhooks: [...(payment.gatewayResponse?.processedWebhooks || []), webhookEventId].filter(Boolean)
             },
@@ -1457,7 +1456,7 @@ exports.processCommissionPayment = async (transactionId, commissionPaymentData) 
 exports.getPaymentStats = async (filters = {}) => {
     try {
         const whereClause = {};
-        
+
         if (filters.startDate) whereClause.createdAt = { [Op.gte]: filters.startDate };
         if (filters.endDate) whereClause.createdAt = { ...whereClause.createdAt, [Op.lte]: filters.endDate };
         if (filters.gatewayProvider) whereClause.gatewayProvider = filters.gatewayProvider;
@@ -1493,7 +1492,7 @@ exports.getPaymentStats = async (filters = {}) => {
 exports.getTransactionHistory = async (filters = {}) => {
     try {
         const whereClause = {};
-        
+
         if (filters.userId) whereClause.userId = filters.userId;
         if (filters.status) whereClause.status = filters.status;
         if (filters.transactionType) whereClause.transactionType = filters.transactionType;
@@ -1616,17 +1615,17 @@ exports.generatePaymentReport = async (reportParams) => {
 exports.sanitizeWebhookData = (webhookData) => {
     try {
         const sanitized = JSON.parse(JSON.stringify(webhookData));
-        
+
         // Remove sensitive fields that might be present in webhook data
         const sensitiveFields = [
             'card_number', 'cardNumber', 'cvv', 'cvc', 'security_code',
             'password', 'secret', 'token', 'key', 'authorization',
             'account_number', 'routing_number', 'ssn', 'sin'
         ];
-        
+
         const removeSensitiveData = (obj) => {
             if (typeof obj !== 'object' || obj === null) return obj;
-            
+
             for (const key in obj) {
                 if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
                     obj[key] = '[REDACTED]';
@@ -1635,7 +1634,7 @@ exports.sanitizeWebhookData = (webhookData) => {
                 }
             }
         };
-        
+
         removeSensitiveData(sanitized);
         return sanitized;
     } catch (error) {
@@ -1657,7 +1656,7 @@ exports.mapWebhookStatusToPaymentStatus = (gatewayProvider, webhookData) => {
                 default:
                     return 'PENDING';
             }
-            
+
         case 'PAYPAL':
             switch (webhookData.event_type) {
                 case 'PAYMENT.CAPTURE.COMPLETED':
@@ -1669,7 +1668,7 @@ exports.mapWebhookStatusToPaymentStatus = (gatewayProvider, webhookData) => {
                 default:
                     return 'PENDING';
             }
-            
+
         case 'RAZORPAY':
             switch (webhookData.event) {
                 case 'payment.captured':
@@ -1679,13 +1678,12 @@ exports.mapWebhookStatusToPaymentStatus = (gatewayProvider, webhookData) => {
                 default:
                     return 'PENDING';
             }
-            
+
         default:
             return 'PENDING';
     }
 };
 
-// Export helper methods for testing
 exports._helpers = {
     mapWebhookStatusToPaymentStatus: this.mapWebhookStatusToPaymentStatus,
     sanitizeWebhookData: this.sanitizeWebhookData

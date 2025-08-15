@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 references: {
                     model: 'users',
-                    key: 'userId'
+                    key: 'user_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -53,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'properties',
-                    key: 'propertyId'
+                    key: 'property_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'listings',
-                    key: 'listingId'
+                    key: 'listing_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -73,13 +73,21 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'user_behaviors',
-                    key: 'behaviorId'
+                    key: 'behavior_id'
                 },
                 onDelete: 'SET NULL',
                 onUpdate: 'CASCADE'
             },
             recommendationType: {
-                type: DataTypes.ENUM('SIMILAR_PROPERTY', 'PRICE_DROP', 'NEW_LISTING', 'LOCATION_BASED', 'PREFERENCE_MATCH', 'TRENDING', 'SEASONAL', 'MARKET_INSIGHT'),
+                type: DataTypes.ENUM(
+                    'SIMILAR_PROPERTY',
+                    'PRICE_DROP',
+                    'NEW_LISTING',
+                    'LOCATION_BASED',
+                    'PREFERENCE_MATCH',
+                    'TRENDING',
+                    'SEASONAL',
+                    'MARKET_INSIGHT'),
                 allowNull: false,
                 validate: {
                     notEmpty: {
@@ -193,7 +201,13 @@ module.exports = (sequelize, DataTypes) => {
                 comment: 'Features used by the recommendation model'
             },
             status: {
-                type: DataTypes.ENUM('ACTIVE', 'VIEWED', 'CLICKED', 'DISMISSED', 'EXPIRED', 'ARCHIVED'),
+                type: DataTypes.ENUM(
+                    'ACTIVE',
+                    'VIEWED',
+                    'CLICKED',
+                    'DISMISSED',
+                    'EXPIRED',
+                    'ARCHIVED'),
                 allowNull: false,
                 defaultValue: 'ACTIVE',
                 validate: {
@@ -243,21 +257,22 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
             tableName: 'recommendations',
+            sequelize,
             underscored: true,
             paranoid: true,
             timestamps: true,
             indexes: [
                 {
-                    fields: ['userId']
+                    fields: ['user_id']
                 },
                 {
-                    fields: ['propertyId']
+                    fields: ['property_id']
                 },
                 {
-                    fields: ['listingId']
+                    fields: ['listing_id']
                 },
                 {
-                    fields: ['recommendationType']
+                    fields: ['recommendation_type']
                 },
                 {
                     fields: ['status']
@@ -266,36 +281,33 @@ module.exports = (sequelize, DataTypes) => {
                     fields: ['priority']
                 },
                 {
-                    fields: ['confidenceScore']
+                    fields: ['confidence_score']
                 },
                 {
-                    fields: ['relevanceScore']
+                    fields: ['relevance_score']
                 },
                 {
-                    fields: ['createdAt']
+                    fields: ['created_at']
                 },
                 {
-                    fields: ['expiresAt']
+                    fields: ['expires_at']
                 },
                 {
-                    fields: ['userId', 'status']
+                    fields: ['user_id', 'status']
                 },
                 {
-                    fields: ['userId', 'recommendationType']
+                    fields: ['user_id', 'recommendation_type']
                 },
                 {
-                    fields: ['propertyId', 'status']
+                    fields: ['property_id', 'status']
                 }
             ],
             hooks: {
                 beforeCreate: (recommendation) => {
-                    // Calculate priority based on confidence and relevance scores
                     if (!recommendation.priority || recommendation.priority === 5) {
                         const avgScore = (recommendation.confidenceScore + recommendation.relevanceScore) / 2;
                         recommendation.priority = Math.round(avgScore * 10);
                     }
-
-                    // Set expiration date for certain recommendation types
                     if (!recommendation.expiresAt) {
                         const expirationDays = {
                             'PRICE_DROP': 7,
@@ -304,16 +316,15 @@ module.exports = (sequelize, DataTypes) => {
                             'SEASONAL': 30,
                             'MARKET_INSIGHT': 7
                         };
-                        
+
                         const days = expirationDays[recommendation.recommendationType] || 30;
                         recommendation.expiresAt = new Date(Date.now() + (days * 24 * 60 * 60 * 1000));
                     }
                 },
                 beforeUpdate: (recommendation) => {
-                    // Update timestamps based on status changes
                     const previousStatus = recommendation._previousDataValues?.status;
                     const currentStatus = recommendation.status;
-                    
+
                     if (previousStatus !== currentStatus) {
                         switch (currentStatus) {
                             case 'VIEWED':
