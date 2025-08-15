@@ -184,11 +184,11 @@ module.exports = (sequelize, DataTypes) => {
             indexes: [
                 { fields: ['city'] },
                 { fields: ['property_type'] },
-                { fields: ['ownerId'] },
-                { fields: ['latitude', 'longitude'], using: 'GIST' },
+                { fields: ['owner_id'] },
+                { fields: ['latitude', 'longitude'] },
                 {
                     type: 'FULLTEXT',
-                    fields: ['address', 'city', 'state', 'zipCode']
+                    fields: ['address', 'city', 'state', 'zip_code']
                 }
             ],
             hooks: {

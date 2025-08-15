@@ -133,7 +133,8 @@ exports.fetchAllUsers = async (page = 1, limit = 10, requestingUser) => {
             statusCode: StatusCodes.OK
         };
     } catch (e) {
-        return handleServiceError('UserService', 'fetchAllUsers', e, 'An unknown error has occurred while trying to fetch users');
+        return handleServiceError('UserService', 'fetchAllUsers', e, 
+            'An unknown error has occurred while trying to fetch users');
     }
 };
 

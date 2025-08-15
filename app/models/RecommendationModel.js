@@ -43,7 +43,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 references: {
                     model: 'users',
-                    key: 'userId'
+                    key: 'user_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -53,7 +53,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'properties',
-                    key: 'propertyId'
+                    key: 'property_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -63,7 +63,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'listings',
-                    key: 'listingId'
+                    key: 'listing_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -73,7 +73,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'user_behaviors',
-                    key: 'behaviorId'
+                    key: 'behavior_id'
                 },
                 onDelete: 'SET NULL',
                 onUpdate: 'CASCADE'
@@ -263,16 +263,16 @@ module.exports = (sequelize, DataTypes) => {
             timestamps: true,
             indexes: [
                 {
-                    fields: ['userId']
+                    fields: ['user_id']
                 },
                 {
-                    fields: ['propertyId']
+                    fields: ['property_id']
                 },
                 {
-                    fields: ['listingId']
+                    fields: ['listing_id']
                 },
                 {
-                    fields: ['recommendationType']
+                    fields: ['recommendation_type']
                 },
                 {
                     fields: ['status']
@@ -281,25 +281,25 @@ module.exports = (sequelize, DataTypes) => {
                     fields: ['priority']
                 },
                 {
-                    fields: ['confidenceScore']
+                    fields: ['confidence_score']
                 },
                 {
-                    fields: ['relevanceScore']
+                    fields: ['relevance_score']
                 },
                 {
-                    fields: ['createdAt']
+                    fields: ['created_at']
                 },
                 {
-                    fields: ['expiresAt']
+                    fields: ['expires_at']
                 },
                 {
-                    fields: ['userId', 'status']
+                    fields: ['user_id', 'status']
                 },
                 {
-                    fields: ['userId', 'recommendationType']
+                    fields: ['user_id', 'recommendation_type']
                 },
                 {
-                    fields: ['propertyId', 'status']
+                    fields: ['property_id', 'status']
                 }
             ],
             hooks: {

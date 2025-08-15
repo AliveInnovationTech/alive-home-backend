@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 references: {
                     model: 'users',
-                    key: 'userId'
+                    key: 'user_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -66,7 +66,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'properties',
-                    key: 'propertyId'
+                    key: 'property_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -76,7 +76,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: true,
                 references: {
                     model: 'listings',
-                    key: 'listingId'
+                    key: 'listing_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -201,28 +201,28 @@ module.exports = (sequelize, DataTypes) => {
             timestamps: true,
             indexes: [
                 {
-                    fields: ['userId']
+                    fields: ['user_id']
                 },
                 {
-                    fields: ['behaviorType']
+                    fields: ['behavior_type']
                 },
                 {
-                    fields: ['propertyId']
+                    fields: ['property_id']
                 },
                 {
-                    fields: ['listingId']
+                    fields: ['listing_id']
                 },
                 {
-                    fields: ['createdAt']
+                    fields: ['created_at']
                 },
                 {
-                    fields: ['userId', 'behaviorType']
+                    fields: ['user_id', 'behavior_type']
                 },
                 {
-                    fields: ['userId', 'propertyId']
+                    fields: ['user_id', 'property_id']
                 },
                 {
-                    fields: ['sessionId']
+                    fields: ['session_id']
                 }
             ],
             hooks: {
@@ -247,7 +247,7 @@ module.exports = (sequelize, DataTypes) => {
                         try {
                             const { Property } = require('./index.js')(sequelize);
                             const property = await Property.findByPk(behavior.propertyId);
-                            
+
                             if (property) {
                                 // Extract preferences from property attributes
                                 const preferences = {
@@ -263,7 +263,7 @@ module.exports = (sequelize, DataTypes) => {
                                         state: property.state
                                     }
                                 };
-                                
+
                                 behavior.userPreferences = preferences;
                                 await behavior.save();
                             }
