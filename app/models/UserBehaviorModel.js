@@ -38,7 +38,7 @@ module.exports = (sequelize, DataTypes) => {
                 allowNull: false,
                 references: {
                     model: 'users',
-                    key: 'userId'
+                    key: 'user_id'
                 },
                 onDelete: 'CASCADE',
                 onUpdate: 'CASCADE'
@@ -185,7 +185,8 @@ module.exports = (sequelize, DataTypes) => {
             }
         },
         {
-            tableName: 'user_behaviors',
+            modelName: 'UserBehavior',
+            tableName: 'behaviors',
             underscored: true,
             paranoid: true,
             timestamps: true,
