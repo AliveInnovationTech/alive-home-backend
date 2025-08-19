@@ -6,11 +6,14 @@ const { STATUS } = require("../utils/constants");
 module.exports = (sequelize, DataTypes) => {
     class User extends Model {
         static associate(models) {
-            User.belongsToMany(models.Role, {
-                through: "user_roles",
+            User.belongsTo(models.Role, {
+                foreignKey: "roleId",
+                as: "role"
+            });
+            User.hasMany(models.Token, {
                 foreignKey: "userId",
-                otherKey: "roleId",
-                as: "roles"
+                as: "tokens",
+                onDelete: "CASCADE"
             });
 
             User.hasOne(models.Realtor, {
@@ -26,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
                 onDelete: 'CASCADE',
                 hooks: true
             });
- 
+
             User.hasOne(models.Owner, {
                 foreignKey: 'userId',
                 as: 'owner',
@@ -81,39 +84,6 @@ module.exports = (sequelize, DataTypes) => {
         async validatePassword(password) {
             return bcrypt.compare(password, this.password);
         }
-
-        static registerHooks(models) {
-            this.afterCreate(async (user) => {
-                const { Role } = models;
-                const defaultRole = await Role.findOne({ 
-                    where: { name: 'USER' } 
-                });
-                if (defaultRole) {
-                    await user.addRole(defaultRole);
-                }
-            });
-            
-            this.beforeValidate(async (user) => {
-                if (user.isNewRecord) return;
-                
-                const existingProfiles = {};
-                const profileTypes = [
-                    'realtor',
-                    'developer',
-                    'homeowner',
-                    'buyer'
-                ];
-                
-                for (const type of profileTypes) {
-                    const profile = await user[`get${type.charAt(0).toUpperCase() + type.slice(1)}`]();
-                    if (profile) {
-                        existingProfiles[type] = profile.profileId;
-                    }
-                }
-                
-                user.existingProfiles = existingProfiles;
-            });
-        }
     }
 
     User.init(
@@ -151,18 +121,14 @@ module.exports = (sequelize, DataTypes) => {
                     name: 'users_phone_unique',
                     msg: 'Phone number already in use'
                 },
-                validate: {
-                    is: {
-                        args: /^\+\d{1,15}$/,
-                        msg: 'Phone must be in E.164 format (+1234567890)'
-                    }
-                }
+                // validate: {
+                //     is: /^\+[1-9]\d{1,14}$/
+                // }
             },
             password: {
                 type: DataTypes.STRING(64),
                 allowNull: false,
                 set(value) {
-                    // Validate the original password length before hashing
                     if (value && (value.length < 8 || value.length > 15)) {
                         throw new Error('Password must be 8-15 characters');
                     }
@@ -260,11 +226,12 @@ module.exports = (sequelize, DataTypes) => {
         }
     );
 
-    User.beforeValidate((user) => {
-        if (!user.phone && !user.email) {
-            throw new Error('Either email or phone must be provided');
-        }
-    });
+    // // ✅ Business rule: require email or phone
+    // User.beforeValidate((user) => {
+    //     if (!user.phoneNumber && !user.email) {
+    //         throw new Error('Either email or phone must be provided');
+    //     }
+    // });
 
     return User;
 };

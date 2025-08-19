@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "nodemon ./bin/www",
     "start": "node ./bin/www",
+    "build": "node -c app.js && node -c lib/swagger.js && node -c bin/www && echo '✅ Build successful - All syntax checks passed'",
     "test": "jest --verbose -c jest.config.js",
+    "lint": "eslint . --ext .js",
     "migrate": "node lib/migrate.js",
     "seed": "node lib/seed.js",
     "seed:permissions": "node lib/seed-permissions.js",
@@ -57,7 +59,10 @@
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
     "stripe": "^14.9.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "tm-utils": "^0.1.13",
+    "umzug": "^3.8.2",
     "uuid": "^3.3.2",
     "winston": "^3.17.0"
   },

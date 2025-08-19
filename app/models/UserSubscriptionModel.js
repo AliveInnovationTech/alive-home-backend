@@ -43,12 +43,22 @@ module.exports = (sequelize, DataTypes) => {
                 onDelete: 'RESTRICT'
             },
             status: {
-                type: DataTypes.ENUM('ACTIVE', 'CANCELLED', 'EXPIRED', 'PENDING', 'SUSPENDED'),
+                type: DataTypes.ENUM(
+                    'ACTIVE', 
+                    'CANCELLED', 
+                    'EXPIRED', 
+                    'PENDING', 
+                    'SUSPENDED'),
                 allowNull: false,
                 defaultValue: 'PENDING',
                 validate: {
                     isIn: {
-                        args: [['ACTIVE', 'CANCELLED', 'EXPIRED', 'PENDING', 'SUSPENDED']],
+                        args: [[
+                            'ACTIVE', 
+                            'CANCELLED', 
+                            'EXPIRED', 
+                            'PENDING', 
+                            'SUSPENDED']],
                         msg: 'Invalid subscription status'
                     }
                 }

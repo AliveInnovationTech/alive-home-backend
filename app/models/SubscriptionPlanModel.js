@@ -66,10 +66,10 @@ module.exports = (sequelize, DataTypes) => {
             currency: {
                 type: DataTypes.STRING(3),
                 allowNull: false,
-                defaultValue: 'USD',
+                defaultValue: 'NGN',
                 validate: {
                     isIn: {
-                        args: [['USD', 'EUR', 'GBP', 'CAD', 'AUD']],
+                        args: [['NGN', 'EUR', 'GBP', 'CAD', 'AUD', 'USD']],
                         msg: 'Unsupported currency'
                     }
                 }

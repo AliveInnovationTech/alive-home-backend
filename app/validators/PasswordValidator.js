@@ -12,15 +12,15 @@ exports.forgotPassword = async (body) => {
 
 exports.resetPassword = async (body) => {
     let schema = {
-        password: Joi.string().required()
+        password: Joi.string().min(8).max(15).required(),
     }
     return validate(schema, body)
 }
 
 exports.updatePassword = async (body) => {
     let schema = {
-        oldPassword: Joi.string().required(),
-        newPassword: Joi.string().required(),
+        oldPassword: Joi.string().min(8).max(15).required(),
+        newPassword: Joi.string().min(8).max(15).required(),
     }
     return validate(schema, body)
 }

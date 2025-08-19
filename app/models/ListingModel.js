@@ -59,7 +59,13 @@ module.exports = (sequelize, DataTypes) => {
                 onUpdate: 'CASCADE'
             },
             listingStatus: {
-                type: DataTypes.ENUM('DRAFT', 'ACTIVE', 'PENDING', 'SOLD', 'WITHDRAWN', 'EXPIRED'),
+                type: DataTypes.ENUM(
+                    'DRAFT',
+                    'ACTIVE',
+                    'PENDING',
+                    'SOLD',
+                    'WITHDRAWN',
+                    'EXPIRED'),
                 allowNull: false,
                 defaultValue: 'DRAFT'
             },
@@ -218,9 +224,15 @@ module.exports = (sequelize, DataTypes) => {
             underscored: true,
             paranoid: true,
             validate: {
-                soldRequiresSoldDate() { if (this.listingStatus === 'SOLD' && !this.soldDate) throw new Error('soldDate is required when SOLD'); },
-                soldDateOnlyWhenSold() { if (this.soldDate && this.listingStatus !== 'SOLD') throw new Error('soldDate only when SOLD'); },
-                expirationNotWhenSold() { if (this.expirationDate && this.listingStatus === 'SOLD') throw new Error('No expirationDate when SOLD'); }
+                soldRequiresSoldDate() {
+                    if (this.listingStatus === 'SOLD' && !this.soldDate) throw new Error('soldDate is required when SOLD');
+                },
+                soldDateOnlyWhenSold() {
+                    if (this.soldDate && this.listingStatus !== 'SOLD') throw new Error('soldDate only when SOLD');
+                },
+                expirationNotWhenSold() {
+                    if (this.expirationDate && this.listingStatus === 'SOLD') throw new Error('No expirationDate when SOLD');
+                }
             },
             indexes: [
                 { fields: ["listing_status"] },

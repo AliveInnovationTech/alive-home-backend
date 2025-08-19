@@ -27,7 +27,7 @@ exports.createProperty = async (body, files, userId) => {
             street: body.street,
             city: body.city,
             state: body.state,
-            country: body.country || 'USA',
+            country: body.country || 'NG',
             zipCode: body.zipCode,
             propertyType: body.propertyType,
             bedrooms: body.bedrooms,
@@ -57,7 +57,7 @@ exports.createProperty = async (body, files, userId) => {
                         mediaUrl: result.secure_url,
                         mediaType: 'IMAGE',
                         cloudinaryId: result.public_id,
-                        isPrimary: mediaUrls.length === 0 // First image as primary
+                        isPrimary: mediaUrls.length === 0 
                     });
 
                     mediaUrls.push(result.secure_url);
@@ -67,7 +67,6 @@ exports.createProperty = async (body, files, userId) => {
             }
         }
 
-        // Fetch property with associations
         const propertyWithDetails = await Property.findByPk(property.propertyId, {
             include: [
                 {
@@ -83,8 +82,12 @@ exports.createProperty = async (body, files, userId) => {
             ]
         });
 
-        logInfo('Property created successfully', { propertyId: property.propertyId, ownerId: userId, mediaCount: mediaUrls.length });
-        
+        logInfo('Property created successfully', { 
+            propertyId: property.propertyId,
+            ownerId: userId,
+            mediaCount: mediaUrls.length
+        });
+
         return {
             data: {
                 property: propertyWithDetails,
@@ -140,6 +143,7 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
 
     } catch (e) {
         return handleServiceError('PropertyService', 'getPropertyById', e, 'Error fetching property');
+        
     }
 };
 
@@ -149,7 +153,6 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
 
-        // Build where clause based on filters
         const whereClause = {};
         
         if (filters.city) {
@@ -303,7 +306,6 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
 
         await Property.update(updateData, { where: { propertyId } });
 
-        // Handle new media uploads
         if (files && files.length > 0) {
             for (const file of files) {
                 try {
@@ -529,6 +531,116 @@ exports.getPropertyStats = async (userId = null) => {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR
         };
+    }
+};
+
+exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
+    try {
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = parseInt(limit) || 10;
+        const offset = (pageNumber - 1) * pageSize;
+
+        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
+            where: { ownerId: userId },
+            include: [
+                {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['userId', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: PropertyMedia,
+                    as: 'media',
+                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary']
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit: pageSize
+        });
+
+        if (!properties.length) {
+            return {
+                error: 'No properties found for this user',
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                properties,
+                pagination: {
+                    currentPage: pageNumber,
+                    pageSize,
+                    totalProperties,
+                    totalPages: Math.ceil(totalProperties / pageSize)
+                }
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError('PropertyService', 'getPropertiesByUser', e, 'Error fetching properties by user');
+    }
+};
+
+exports.updatePropertyStatus = async (propertyId, status, userId) => {
+    try {
+        // Validate status
+        const validStatuses = ['active', 'pending', 'draft', 'sold', 'unavailable', 'AVAILABLE', 'SOLD', 'PENDING', 'DRAFT'];
+        if (!validStatuses.includes(status)) {
+            return {
+                error: 'Invalid status. Must be one of: active, pending, draft, sold, unavailable',
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+
+        // Find property and check ownership
+        const property = await Property.findByPk(propertyId, {
+            include: [
+                {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['userId', 'firstName', 'lastName']
+                }
+            ]
+        });
+
+        if (!property) {
+            return {
+                error: 'Property not found',
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        // Check if user has permission to update this property
+        if (property.ownerId !== userId && !['ADMIN', 'SYSADMIN'].includes(userId.role)) {
+            return {
+                error: 'Unauthorized to update this property',
+                statusCode: StatusCodes.FORBIDDEN
+            };
+        }
+
+        // Update status
+        await property.update({ status });
+
+        logInfo('Property status updated', { 
+            propertyId,
+            oldStatus: property.status,
+            newStatus: status,
+            updatedBy: userId
+        });
+
+        return {
+            data: {
+                property,
+                message: `Property status updated to ${status}`
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError('PropertyService', 'updatePropertyStatus', e, 'Error updating property status');
     }
 };
 
