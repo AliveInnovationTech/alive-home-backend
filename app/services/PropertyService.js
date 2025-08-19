@@ -143,6 +143,7 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
 
     } catch (e) {
         return handleServiceError('PropertyService', 'getPropertyById', e, 'Error fetching property');
+        
     }
 };
 

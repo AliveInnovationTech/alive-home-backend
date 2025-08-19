@@ -8,16 +8,16 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: "userId",
                 as: "user"
             });
-            Token.belongsToMany(models.User, {
-                through: "user_roles",
-                foreignKey: "roleId",
-                otherKey: "userId",
-                as: "users"
-            });
         }
     }
 
     Token.init({
+        tokenId: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
+            allowNull: false
+        },
         token: {
             type: DataTypes.STRING,
             allowNull: false

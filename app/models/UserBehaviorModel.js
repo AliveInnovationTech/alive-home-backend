@@ -1,6 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
-const logger = require("../utils/logger");
+const logger = require("../utils/logger.js");
 
 module.exports = (sequelize, DataTypes) => {
     class UserBehavior extends Model {

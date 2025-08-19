@@ -4,12 +4,19 @@ const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
     class Permission extends Model {
         static associate(models) {
+            // Permission.belongsToMany(models.Role, {
+            //     through: 'role_permissions',
+            //     foreignKey: 'permissionId',
+            //     otherKey: 'roleId',
+            //     as: 'roles',
+            //     onDelete: 'CASCADE'
+            // });
             Permission.belongsToMany(models.Role, {
-                through: 'role_permissions',
+                through: models.RolePermission,
                 foreignKey: 'permissionId',
                 otherKey: 'roleId',
                 as: 'roles',
-                onDelete: 'CASCADE'
+                onDelete: 'CASCADE',
             });
         }
     }
@@ -45,23 +52,23 @@ module.exports = (sequelize, DataTypes) => {
         },
         category: {
             type: DataTypes.ENUM(
-                'GENERAL',
-                'USER_MANAGEMENT',
-                'ROLE_MANAGEMENT',
-                'PROPERTY_MANAGEMENT',
-                'LISTING_APPROVAL',
-                'TRANSACTION_MANAGEMENT',
-                'REPORTING',
-                'NOTIFICATION',
-                'SETTINGS',
-                'BILLING',
-                'CONTENT_MANAGEMENT',
-                'SYSTEM',
-                'CUSTOM',
-                'PERMISSION_MANAGEMENT'
+                "GENERAL",
+                "USER_MANAGEMENT",
+                "ROLE_MANAGEMENT",
+                "PROPERTY_MANAGEMENT",
+                "LISTING_APPROVAL",
+                "TRANSACTION_MANAGEMENT",
+                "REPORTING",
+                "NOTIFICATION",
+                "SETTINGS",
+                "BILLING",
+                "CONTENT_MANAGEMENT",
+                "SYSTEM",
+                "CUSTOM",
+                "PERMISSION_MANAGEMENT"
             ),
             allowNull: false,
-            defaultValue: 'GENERAL',
+            defaultValue: "GENERAL",
             validate: {
                 notEmpty: {
                     msg: 'Category is required'

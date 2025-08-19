@@ -7,8 +7,8 @@ const { Op } = require("sequelize");
 const passwordValidator = require("../validators/PasswordValidator");
 const { sendEmailNotification } = require("../services/NotificationService");
 const sequelize = require("../../lib/database");
-const logger = require("../utils/logger");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
+
 
 const getModels = () => {
     if (!sequelize.models.User || !sequelize.models.Token) {
@@ -16,7 +16,8 @@ const getModels = () => {
     }
     return {
         User: sequelize.models.User,
-        Token: sequelize.models.Token
+        Token: sequelize.models.Token,
+        Role: sequelize.models.Role
     };
 };
 
@@ -31,20 +32,30 @@ exports.login = async (body) => {
         }
         const { email, phoneNumber, password } = body;
 
-        const { User, Token } = getModels();
+        const { User, Token, Role } = getModels();
 
-        const user = await User.scope('withPassword').findOne({ 
-            where: {
-                [Op.or]: [
-                    { email },
-                    { phoneNumber }
-                ]
-            },
-            include: [{ association: 'roles', attributes: ['name'], through: { attributes: [] } }]
+        const conditions = [];
+        if (email) conditions.push({ email });
+        if (phoneNumber) conditions.push({ phoneNumber });
+
+        if (conditions.length === 0) {
+            throw new Error("Either email or phone is required");
+        }
+
+        const user = await User.scope('withPassword').findOne({
+            where: { [Op.or]: conditions },
+            include: [
+                {
+                    model: Role,
+                    as: 'role',
+                    attributes: ['roleId', 'name']
+                }
+            ]
         });
+
         if (!user) {
             return {
-                error: "User not found",
+                error: "Invalid credentials",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
@@ -64,14 +75,17 @@ exports.login = async (body) => {
         );
 
         logInfo('User login successful', { userId: user.userId, email: user.email });
-        
+
         return {
             data: {
                 user: {
                     userId: user.userId,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
-                    roles: user.roles?.map(role => role.name) || [],
+                    role: user.role ? {
+                        roleId: user.role.roleId,
+                        name: user.role.name
+                    } : null,
                     profilePictureUrl: user.profilePictureUrl
                 },
                 token
@@ -84,12 +98,12 @@ exports.login = async (body) => {
     }
 }
 
-exports.me = async (body) => {
+exports.me = async (userId) => {
 
     const { User, Token } = getModels();
     try {
-        const user = await User.findByPk(body.userId, {
-            include: [{ association: 'roles', attributes: ['name'], through: { attributes: [] } }]
+        const user = await User.findByPk(userId, {
+            include: [{ association: 'role', attributes: ['name'] }]
         });
         if (!user) {
             return {
@@ -99,14 +113,16 @@ exports.me = async (body) => {
         }
 
         logInfo('User profile retrieved successfully', { userId: user.userId });
-        
+
         return {
             data: {
                 user: {
                     userId: user.userId,
                     email: user.email,
                     phoneNumber: user.phoneNumber,
-                    roles: user.roles?.map(role => role.name) || [],
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    role: user.role?.name || null,
                     profilePictureUrl: user.profilePictureUrl
                 }
             },
@@ -132,7 +148,7 @@ exports.forgotPassword = async (body) => {
         const user = await User.findOne({ where: { email } });
         if (!user) {
             return {
-                error: "User not found",
+                error: "Oops! User not found on the platform",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
@@ -146,42 +162,37 @@ exports.forgotPassword = async (body) => {
             }
         });
 
-        if (token) {
-            return {
-                data: {
-                    token: token.token
-                },
-                statusCode: StatusCodes.OK
-            };
+        if (!token) {
+            token = await new Token({
+                userId: user.userId,
+                token: crypto({ length: 32 }),
+                expiresAt: new Date(Date.now() + 3600000)
+            }).save();
         }
 
-        const newToken = crypto({ length: 32 });
-        await Token.create({
-            token: newToken,
-            userId: user.userId
-        });
+        const html = `${process.env.FRONTEND_URL}/${user.userId}/${token.token}`;
 
-        const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=/${user.userId}/${newToken}`;
-
+        const data = {
+            userId: user.userId,
+            email: user.email,
+            name: user.firstName,
+            link: html,
+        };
         await sendEmailNotification(
-            user.email,
-            user.firstName,
-            "Password Reset Request",
+            data,
             "forgotPassword",
-            {
-                link: resetLink
-            }
+            "Password Reset Request",
         );
 
-        logInfo('Password reset email sent successfully', { email: user.email });
-        
+        logInfo('Password reset email sent successfully', { email: user.email, userId: user.userId });
+
         return {
             data: {
+                userId: user.userId,
                 message: "Password reset link sent to your email"
             },
             statusCode: StatusCodes.OK
         };
-
     } catch (e) {
         return handleServiceError('AuthService', 'forgotPassword', e, 'An unknown error occurred during password reset. Please try again later');
     }
@@ -197,7 +208,6 @@ exports.resetPassword = async (body, userId, token) => {
             }
         }
         const { User, Token } = getModels();
-        //const { userId, token, newPassword } = body;
         const user = await User.findByPk(userId);
         if (!user) {
             return {
@@ -223,12 +233,12 @@ exports.resetPassword = async (body, userId, token) => {
             };
         }
 
-        user.password = body.newPassword;
+        user.password = body.password;
         await user.save();
         await existingToken.destroy();
 
         logInfo('Password reset successful', { userId: user.userId });
-        
+
         return {
             data: {
                 user: {
@@ -253,7 +263,7 @@ exports.changePassword = async (body, userId) => {
                 statusCode: StatusCodes.BAD_REQUEST
             }
         }
-      const {User, Token} = getModels();
+        const { User, Token } = getModels();
         const { oldPassword, newPassword } = body;
         const user = await User.scope('withPassword').findByPk(userId);
         if (!user) {
@@ -275,7 +285,7 @@ exports.changePassword = async (body, userId) => {
         await user.save();
 
         logInfo('Password change successful', { userId: user.userId });
-        
+
         return {
             data: {
                 user: {

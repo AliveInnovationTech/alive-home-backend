@@ -21,7 +21,7 @@ exports.me = async (req, res) => {
         error,
         statusCode,
         data
-    } = await authService.me(req.user);
+    } = await authService.me(req.params.userId);
 
     if (error) return response.error(res, error, statusCode);
 
@@ -53,12 +53,12 @@ exports.resetPassword = async (req, res) => {
     return response.success(res, data, statusCode);
 }
 
-exports.updatePassword = async (req, res) => {
+exports.changePassword = async (req, res) => {
     const {
         error,
         statusCode,
         data
-    } = await authService.changePassword(req.body, req.params);
+    } = await authService.changePassword(req.body, req.params.userId);
 
     if (error) return response.error(res, error, statusCode);
 

@@ -58,6 +58,7 @@
     "sequelize-cli": "^6.6.3",
     "stripe": "^14.9.0",
     "tm-utils": "^0.1.13",
+    "umzug": "^3.8.2",
     "uuid": "^3.3.2",
     "winston": "^3.17.0"
   },

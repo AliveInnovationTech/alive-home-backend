@@ -1,19 +1,32 @@
 "use strict";
-const express = require("express"); 
+const express = require("express");
 const router = express.Router();
-const controller =require("../app/controllers/UserController")
+const controller = require("../app/controllers/UserController")
 const upload = require("../app/utils/upload")
+const { authenticateUser, authorizeRoles } = require("../lib/authMiddleware")
 
 
 
-router.post("/", controller.createUser);
+
+router.post("/create", controller.createUser);
 
 router.get("/:userId", controller.getUserById);
 
-router.get("/", controller.fetchAllUsers);
+router.get("/",
+    authenticateUser,
+    authorizeRoles("ADMIN", "SYSADMIN"),
+    controller.fetchAllUsers);
 
-router.patch("/:userId", upload.single("profilePicture"), controller.updateUser);
+router.put("/:userId",
+    authenticateUser,
+    authorizeRoles("HOMEOWNER", "DEVELOPER",
+        "REALTOR", "BUYER", "ADMIN",
+        "SYSADMIN"),
+    upload.single("profilePicture"), controller.updateUser);
 
-router.delete("/:userId", controller.deleteUser);
+router.delete("/:userId",
+    authenticateUser,
+    authorizeRoles("ADMIN", "SYSADMIN"),
+    controller.deleteUser);
 
 module.exports = router;
