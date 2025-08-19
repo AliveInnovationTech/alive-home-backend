@@ -193,9 +193,8 @@ module.exports = (sequelize, DataTypes) => {
                 comment: 'Additional metadata for analytics'
             }
         },
-        {
-            tableName: 'user_behaviors',
             sequelize,
+            modelName: 'UserBehavior',
             underscored: true,
             paranoid: true,
             timestamps: true,
