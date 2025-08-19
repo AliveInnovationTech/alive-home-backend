@@ -9,7 +9,9 @@
   "scripts": {
     "dev": "nodemon ./bin/www",
     "start": "node ./bin/www",
+    "build": "node -c app.js && node -c lib/swagger.js && node -c bin/www && echo '✅ Build successful - All syntax checks passed'",
     "test": "jest --verbose -c jest.config.js",
+    "lint": "eslint . --ext .js",
     "migrate": "node lib/migrate.js",
     "seed": "node lib/seed.js",
     "seed:permissions": "node lib/seed-permissions.js",
