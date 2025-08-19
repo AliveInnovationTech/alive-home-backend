@@ -1,10 +1,17 @@
 "use strict";
 const Joi = require("joi");
 const { validate } = require("../utils/helpers");
-const User = require("../models/UserModel");
+const sequelize = require("../../lib/database");
 
 
-
+const getModels = () => {
+    if (!sequelize.models.User) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User
+    };
+};
 exports.createUser = async (body) => {
     const {
         email,
@@ -19,7 +26,7 @@ exports.createUser = async (body) => {
         lastName: Joi.string().required(),
         roleId: Joi.string()
     };
-
+const { User } = getModels();
     const error = validate(schema, body);
 
     if (error) return error;
@@ -29,9 +36,7 @@ exports.createUser = async (body) => {
     }
 
     if (email) {
-        const emailExists = await User.findOne({
-            email
-        });
+        const emailExists = await User.findOne({ where: { email } });
 
         if (emailExists) {
             return "Email has been taken";
@@ -39,9 +44,7 @@ exports.createUser = async (body) => {
     }
 
     if (phoneNumber) {
-        const phoneExists = await User.findOne({
-            phoneNumber
-        });
+        const phoneExists = await User.findOne({ where: { phoneNumber } });
 
         if (phoneExists) {
             return "Phone Number has been taken";
@@ -55,8 +58,8 @@ exports.createUser = async (body) => {
 
 exports.updateUser = async(body)=>{
     let schema ={
-    firstName: Joi.string().required(),
-    lastName: Joi.string().required(),
+    firstName: Joi.string(),
+    lastName: Joi.string(),
     profilePicture: Joi.string().uri().optional(),
     cloudinary_id: Joi.string()
     }

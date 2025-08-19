@@ -1,7 +1,7 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const { Op } = require("sequelize");
-const { Transaction, Payment, UserSubscription, User, Property, SubscriptionPlan } = require("../models");
+const { Transaction, Payment, UserSubscription, User, Property, SubscriptionPlan } = require("../models/");
 const axios = require("axios");
 const crypto = require("crypto");
 const logger = require("../utils/logger");

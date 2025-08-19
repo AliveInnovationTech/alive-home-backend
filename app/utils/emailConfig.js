@@ -1,35 +1,19 @@
-"use strict"
+"use strict";
 const nodemailer = require("nodemailer");
-const logger = require("./logger");
 
-const nodeMailerConfig = async (receiverEmail, subject, text, html, attachments) => {
-    try {
-        const transporter = nodemailer.createTransport({
-            host: process.env.EMAIL_HOST,
-            service: process.env.EMAIL_SERVICE,
-            port: process.env.EMAIL_PORT,
-            secure: false, //Security can either be FALSE OR TRUE
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST,
+    service: process.env.EMAIL_SERVICE,
+    port: 587,     // or 465 if secure
+    secure: false, // true for 465, false for 587
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+    tls: {
+        rejectUnauthorized: true,
+        minVersion: "TLSv1",
+    },
+});
 
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-            tls: {
-                rejectUnauthorized: true,
-                minVersion: 'TLSv1'
-            },
-        });
-        await transporter.sendMail({
-            from: 'AliveHome <aliveinnovationtech@gmail.com>',
-            to: receiverEmail,
-            subject: subject,
-            text:text,
-            html: html,
-            attachments:attachments
-        });
-        logger.info("Email sent successfully", { receiverEmail, subject });
-    } catch (error) {
-        logger.error("Email sending failed", { receiverEmail, subject, error: error.message });
-    }
-};
-module.exports = nodeMailerConfig;
+module.exports = transporter;

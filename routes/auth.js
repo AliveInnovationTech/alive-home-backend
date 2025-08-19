@@ -6,12 +6,12 @@ const controller = require("../app/controllers/AuthController");
 
 router.post("/login", controller.login);
 
-router.get("/me", controller.me);
+router.get("/me/:userId", controller.me);
 
 router.post("/forgot-password", controller.forgotPassword);
 
 router.post("/reset-password/:userId/:token", controller.resetPassword);
 
-router.post("/update-password", controller.updatePassword);
+router.post("/change-password/:userId", controller.changePassword);
 
 module.exports = router;

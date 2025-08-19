@@ -1,77 +1,82 @@
 "use strict";
-const { StatusCodes } = require("http-status-codes");
-const transporter = require("../utils/emailConfig"); // Nodemailer transporter instance
 const pushService = require("../utils/pushService");
-const sequelize = require("../../lib/database")
+const { StatusCodes } = require("http-status-codes");
+const transporter = require("../utils/emailConfig");
+const sequelize = require("../../lib/database");
 const path = require("path");
 const ejs = require("ejs");
-const fs = require("fs");
 const logger = require("../utils/logger");
-const { handleServiceError, logInfo } = require("../utils/errorHandler");
-
-/**
- * Send an email notification with EJS template support
- * @param {string} recipientEmail - Email address of recipient
- * @param {string} subject - Email subject
- * @param {string} templateName - Name of the EJS template file (without extension)
- * @param {Object} templateData - Data to pass into the template
- * 
- */
+const { logInfo } = require("../utils/errorHandler");
 
 const getModels = () => {
     if (!sequelize.models.Notification) {
-        throw new Error('Models not loaded yet');
+        throw new Error("Models not loaded yet");
     }
     return {
         User: sequelize.models.User,
-        Notification: sequelize.models.Notification
+        Notification: sequelize.models.Notification,
     };
 };
-exports.sendEmailNotification = async (recipientEmail, subject, templateName, templateData = {}) => {
-    try {
-        const templatePath = path.join(__dirname, "..", "templates", `${templateName}.html`);
 
-        const htmlContent = await ejs.renderFile(templatePath, templateData);
+/**
+ * Send an email notification with EJS template support
+ * @param {Object} data - Object containing recipient details (email, name, etc.)
+ * @param {string} templateName - Name of the EJS template file (without extension)
+ * @param {string} subject - Email subject
+ * @param {Object} templateData - Data to pass into the template
+ */
+exports.sendEmailNotification = async (
+    data,
+    templateName,
+    subject,
+    templateData = {}
+) => {
+    const { Notification } = getModels();
+    const { userId, email } = data;
+
+    try {
+        const templatePath = path.join(__dirname, "../templates", `${templateName}.html`);
+        const htmlContent = await ejs.renderFile(templatePath, { ...data, ...templateData });
 
         const mailOptions = {
-            from: transporter.options.auth.user,
-            to: recipientEmail,
+            from: `AliveHome <${process.env.EMAIL_USER}>`,
+            to: email,
             subject,
-            html: htmlContent
+            html: htmlContent,
         };
-        const { Notification } = getModels()
-        // Send email
-        const info = await transporter.sendMail(mailOptions);
-        logInfo("Email sent successfully", { recipientEmail, subject, response: info.response });
 
-        // Save notification record
+        const info = await transporter.sendMail(mailOptions);
+        logInfo("Email sent successfully", { email, subject, response: info.response });
+
         await Notification.create({
-            recipientId: recipientEmail,
+            recipientId: userId,
             type: "EMAIL",
             subject,
-            content: "",
+            content: templateData?.text || `Notification sent to ${email}`,
             html: htmlContent,
-            status: "SENT"
+            status: "SENT",
         });
 
         return {
             statusCode: StatusCodes.OK,
-            message: "Email notification sent successfully"
+            message: "Email notification sent successfully",
         };
     } catch (error) {
-        logger.error("Error sending email", { recipientEmail, subject, error: error.message });
+        logger.error("Error sending email", { email, subject, error: error.message });
+
+        const { Notification } = getModels();
 
         await Notification.create({
-            recipientId: recipientEmail,
+            recipientId: data.userId || null,
             type: "EMAIL",
             subject,
-            content: "",
-            status: "FAILED"
+            content: "Email failed to send",
+            status: "FAILED",
         });
 
         return {
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: "Failed to send email notification"
+            message: "Failed to send email notification",
         };
     }
 };
@@ -120,8 +125,8 @@ exports.sendPushNotification = async (recipientId, title, message) => {
 };
 
 exports.getNotifications = async (recipientId) => {
-    
-     const {Notification} =getModels()
+
+    const { Notification } = getModels()
     try {
         const notifications = await Notification.find({ recipientId });
         return {
