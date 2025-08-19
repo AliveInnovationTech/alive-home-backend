@@ -195,6 +195,7 @@ module.exports = (sequelize, DataTypes) => {
         },
             sequelize,
             modelName: 'UserBehavior',
+            tableName: 'user_behaviors',
             underscored: true,
             paranoid: true,
             timestamps: true,
