@@ -102,3 +102,31 @@ exports.getPropertyStats = async (req, res) => {
 
     return response.success(res, data, statusCode);
 };
+
+exports.getPropertiesByUser = async (req, res) => {
+    const {
+        error,
+        data,
+        statusCode
+    } = await propertyService.getPropertiesByUser(req.params.userId, req.query);
+
+    if (error) return response.error(res, error, statusCode);
+
+    return response.success(res, data, statusCode);
+};
+
+exports.updatePropertyStatus = async (req, res) => {
+    const {
+        error,
+        data,
+        statusCode
+    } = await propertyService.updatePropertyStatus(
+        req.params.propertyId,
+        req.body.status,
+        req.user
+    );
+
+    if (error) return response.error(res, error, statusCode);
+
+    return response.success(res, data, statusCode);
+};

@@ -57,6 +57,8 @@
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
     "stripe": "^14.9.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "tm-utils": "^0.1.13",
     "umzug": "^3.8.2",
     "uuid": "^3.3.2",

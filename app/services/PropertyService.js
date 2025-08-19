@@ -534,3 +534,113 @@ exports.getPropertyStats = async (userId = null) => {
     }
 };
 
+exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
+    try {
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = parseInt(limit) || 10;
+        const offset = (pageNumber - 1) * pageSize;
+
+        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
+            where: { ownerId: userId },
+            include: [
+                {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['userId', 'firstName', 'lastName', 'email']
+                },
+                {
+                    model: PropertyMedia,
+                    as: 'media',
+                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary']
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit: pageSize
+        });
+
+        if (!properties.length) {
+            return {
+                error: 'No properties found for this user',
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                properties,
+                pagination: {
+                    currentPage: pageNumber,
+                    pageSize,
+                    totalProperties,
+                    totalPages: Math.ceil(totalProperties / pageSize)
+                }
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError('PropertyService', 'getPropertiesByUser', e, 'Error fetching properties by user');
+    }
+};
+
+exports.updatePropertyStatus = async (propertyId, status, userId) => {
+    try {
+        // Validate status
+        const validStatuses = ['active', 'pending', 'draft', 'sold', 'unavailable', 'AVAILABLE', 'SOLD', 'PENDING', 'DRAFT'];
+        if (!validStatuses.includes(status)) {
+            return {
+                error: 'Invalid status. Must be one of: active, pending, draft, sold, unavailable',
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+
+        // Find property and check ownership
+        const property = await Property.findByPk(propertyId, {
+            include: [
+                {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['userId', 'firstName', 'lastName']
+                }
+            ]
+        });
+
+        if (!property) {
+            return {
+                error: 'Property not found',
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        // Check if user has permission to update this property
+        if (property.ownerId !== userId && !['ADMIN', 'SYSADMIN'].includes(userId.role)) {
+            return {
+                error: 'Unauthorized to update this property',
+                statusCode: StatusCodes.FORBIDDEN
+            };
+        }
+
+        // Update status
+        await property.update({ status });
+
+        logInfo('Property status updated', { 
+            propertyId,
+            oldStatus: property.status,
+            newStatus: status,
+            updatedBy: userId
+        });
+
+        return {
+            data: {
+                property,
+                message: `Property status updated to ${status}`
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError('PropertyService', 'updatePropertyStatus', e, 'Error updating property status');
+    }
+};
+

@@ -15,6 +15,10 @@ require("./lib")(app, express);
 const {formatPhoneNumber} = require("tm-utils");
 const logger = require("./app/utils/logger");
 
+// Swagger documentation setup
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./lib/swagger');
+
 
 
 app.use((req, res, next) => {
@@ -32,6 +36,20 @@ app.use((req, res, next) => {
         return next();
     }
 });
+
+// Swagger documentation route
+app.use('/', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Alive Home API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true
+  }
+}));
 
 //routes
 require("./routes")(app);
