@@ -4,6 +4,7 @@ const sequelize = require("../../lib/database");
 const buyerValidator = require("../validators/BuyerValidator");
 const logger = require("../utils/logger");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
+const propertyService = require("./PropertyService")
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -68,7 +69,7 @@ exports.createBuyerProfile = async (payload, user) => {
         });
 
         logInfo('Buyer profile created successfully', { buyerId: buyerWithUser.buyerId, userId: user.userId });
-        
+
         return {
             data: {
                 buyerId: buyerWithUser.buyerId,
@@ -160,7 +161,7 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (buyer.userId !== user.userId && user.role !== 'ADMIN' && user.role !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -321,7 +322,7 @@ exports.deleteBuyerProfile = async (buyerId, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (buyer.userId !== user.userId && user.role !== 'ADMIN' && user.role !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -369,7 +370,7 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (buyer.userId !== user.userId && user.role !== 'ADMIN' && user.role !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -485,54 +486,41 @@ exports.searchProperties = async (buyerId, query) => {
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {
             return {
-                error: "Buyer profile not found",
+                error: "Oops! This buyer profile is not found on this platform",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
 
-        // This is a placeholder for property search functionality
-        // In a real implementation, you would integrate with a property service
-        const mockProperties = [
-            {
-                propertyId: "prop-1",
-                title: "Beautiful 3-bedroom house",
-                price: 250000,
-                location: "Lekki, Lagos",
-                propertyType: "HOUSE",
-                bedrooms: 3,
-                bathrooms: 2,
-                area: "200 sqm"
-            },
-            {
-                propertyId: "prop-2",
-                title: "Modern apartment",
-                price: 180000,
-                location: "Victoria Island, Lagos",
-                propertyType: "CONDO",
-                bedrooms: 2,
-                bathrooms: 2,
-                area: "120 sqm"
-            }
-        ];
+        const filters = {
+            ...query?.filters,
+            propertyType: buyer.propertyType || query?.filters?.propertyType,
+            minPrice: buyer.minimumBudget || query?.filters?.minPrice,
+            maxPrice: buyer.maximumBudget || query?.filters?.maxPrice
+        };
 
-        // Filter properties based on buyer preferences
-        const filteredProperties = mockProperties.filter(property => {
-            return property.price >= buyer.minimumBudget &&
-                property.price <= buyer.maximumBudget &&
-                (buyer.propertyType === 'HOUSE' || property.propertyType === buyer.propertyType);
-        });
+        const propertySearch = await propertyService.searchProperties(
+            query?.searchTerm || "",
+            filters,
+            query?.page || 1,
+            query?.limit || 10
+        );
+
+        if (propertySearch.error) {
+            return propertySearch;
+        }
 
         return {
             data: {
                 buyerId: buyer.buyerId,
-                properties: filteredProperties,
-                totalProperties: filteredProperties.length
+                properties: propertySearch.data,
+                totalProperties: propertySearch.pagination.totalProperties,
+                pagination: propertySearch.pagination
             },
             statusCode: StatusCodes.OK
         };
 
     } catch (e) {
-        console.error("An error occurred while searching properties:", e);
+        console.log("An error occurred while searching properties:", e);
         return {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR

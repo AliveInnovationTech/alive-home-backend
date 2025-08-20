@@ -55,7 +55,7 @@ exports.login = async (body) => {
 
         if (!user) {
             return {
-                error: "Invalid credentials",
+                error: "User doesn't exist on the platform",
                 statusCode: StatusCodes.NOT_FOUND
             };
         }
@@ -170,7 +170,7 @@ exports.forgotPassword = async (body) => {
             }).save();
         }
 
-        const html = `${process.env.FRONTEND_URL}/${user.userId}/${token.token}`;
+        const html = `${process.env.FRONTEND_URL}/reset-password?userId=${user.userId}&token=${token.token}`;
 
         const data = {
             userId: user.userId,

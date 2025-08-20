@@ -6,42 +6,42 @@ const { authenticateUser, authorizeRoles } = require("../lib/authMiddleware");
 
 // Create buyer profile
 router.post("/", authenticateUser,
-    authorizeRoles("buyer"),
+    authorizeRoles("BUYER"),
     controller.createBuyerProfile);
 
 
 router.get("/", authenticateUser,
-    authorizeRoles("admin", "superadmin"),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.getAllBuyers);
 
 // Get my buyer profile
 router.get("/me", authenticateUser,
-    authorizeRoles("buyer", "admin", "superadmin"),
+    authorizeRoles("BUYER", "ADMIN", "SYSADMIN"),
     controller.getMyBuyerProfile);
 
 // Get specific buyer profile
 router.get("/:buyerId", authenticateUser,
-    authorizeRoles("buyer", "admin", "superadmin"),
+    authorizeRoles("BUYER", "ADMIN", "SYSADMIN"),
     controller.getBuyerProfile);
 
 // Update buyer profile
 router.put("/:buyerId", authenticateUser,
-    authorizeRoles("buyer", "admin", "superadmin"),
+    authorizeRoles("BUYER", "ADMIN", "SYSADMIN"),
     controller.updateBuyerProfile);
 
 
 router.delete("/:buyerId", authenticateUser,
-    authorizeRoles("buyer", "admin", "superadmin"),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.deleteBuyerProfile);
 
 
 router.patch("/:buyerId/pre-approval", authenticateUser,
-    authorizeRoles("admin", "superadmin"),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.updatePreApprovalStatus);
 
 
 router.get("/:buyerId/properties", authenticateUser,
-    authorizeRoles("buyer", "admin", "superadmin"),
+    authorizeRoles("BUYER", "ADMIN", "SYSADMIN"),
     controller.searchProperties);
 
 module.exports = router;
