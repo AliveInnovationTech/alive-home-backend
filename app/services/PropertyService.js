@@ -11,20 +11,18 @@ const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
 exports.createProperty = async (body, files, userId) => {
     try {
-        // Validate required fields
-        if (!body.title || !body.description || !body.street || !body.city || !body.state) {
+        if (!body.title || !body.description || !body.address || !body.city || !body.state) {
             return {
                 error: "Missing required fields: title, description, street, city, state",
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
 
-        // Create property
         const property = await Property.create({
             ownerId: userId,
             title: body.title,
             description: body.description,
-            street: body.street,
+            address: body.address,
             city: body.city,
             state: body.state,
             country: body.country || 'NG',
@@ -57,7 +55,7 @@ exports.createProperty = async (body, files, userId) => {
                         mediaUrl: result.secure_url,
                         mediaType: 'IMAGE',
                         cloudinaryId: result.public_id,
-                        isPrimary: mediaUrls.length === 0 
+                        isPrimary: mediaUrls.length === 0
                     });
 
                     mediaUrls.push(result.secure_url);
@@ -82,7 +80,7 @@ exports.createProperty = async (body, files, userId) => {
             ]
         });
 
-        logInfo('Property created successfully', { 
+        logInfo('Property created successfully', {
             propertyId: property.propertyId,
             ownerId: userId,
             mediaCount: mediaUrls.length
@@ -135,7 +133,7 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
         }
 
         logInfo('Property retrieved successfully', { propertyId });
-        
+
         return {
             data: property,
             statusCode: StatusCodes.OK
@@ -143,7 +141,7 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
 
     } catch (e) {
         return handleServiceError('PropertyService', 'getPropertyById', e, 'Error fetching property');
-        
+
     }
 };
 
@@ -154,33 +152,33 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const offset = (pageNumber - 1) * pageSize;
 
         const whereClause = {};
-        
+
         if (filters.city) {
             whereClause.city = { [Op.iLike]: `%${filters.city}%` };
         }
-        
+
         if (filters.state) {
             whereClause.state = { [Op.iLike]: `%${filters.state}%` };
         }
-        
+
         if (filters.propertyType) {
             whereClause.propertyType = filters.propertyType;
         }
-        
+
         if (filters.status) {
             whereClause.status = filters.status;
         }
-        
+
         if (filters.minPrice || filters.maxPrice) {
             whereClause.price = {};
             if (filters.minPrice) whereClause.price[Op.gte] = parseFloat(filters.minPrice);
             if (filters.maxPrice) whereClause.price[Op.lte] = parseFloat(filters.maxPrice);
         }
-        
+
         if (filters.minBedrooms) {
             whereClause.bedrooms = { [Op.gte]: parseInt(filters.minBedrooms) };
         }
-        
+
         if (filters.maxBedrooms) {
             whereClause.bedrooms = { ...whereClause.bedrooms, [Op.lte]: parseInt(filters.maxBedrooms) };
         }
@@ -207,7 +205,7 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         });
 
         logInfo('Properties fetched successfully', { totalProperties, pageNumber, pageSize });
-        
+
         return {
             data: properties,
             pagination: {
@@ -274,7 +272,7 @@ exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
 exports.updateProperty = async (propertyId, body, files, userId) => {
     try {
         const property = await Property.findByPk(propertyId);
-        
+
         if (!property) {
             return {
                 error: "Property not found",
@@ -293,7 +291,7 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
         // Update property fields
         const updateData = {};
         const allowedFields = [
-            'title', 'description', 'street', 'city', 'state', 'country', 
+            'title', 'description', 'address', 'city', 'state', 'country',
             'zipCode', 'propertyType', 'bedrooms', 'bathrooms', 'squareFootage',
             'yearBuilt', 'lotSize', 'price', 'status'
         ];
@@ -363,7 +361,7 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
 exports.deleteProperty = async (propertyId, userId) => {
     try {
         const property = await Property.findByPk(propertyId);
-        
+
         if (!property) {
             return {
                 error: "Property not found",
@@ -381,7 +379,7 @@ exports.deleteProperty = async (propertyId, userId) => {
 
         // Check if property has active listings
         const activeListings = await Listing.count({
-            where: { 
+            where: {
                 propertyId,
                 listingStatus: { [Op.in]: ['ACTIVE', 'PENDING'] }
             }
@@ -427,31 +425,40 @@ exports.deleteProperty = async (propertyId, userId) => {
     }
 };
 
-exports.searchProperties = async (searchTerm, filters = {}, page = 1, limit = 10) => {
+exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit = 10) => {
     try {
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
 
-        const whereClause = {
-            [Op.or]: [
+        const whereClause = {};
+
+        if (searchTerm && searchTerm.trim() !== "") {
+            whereClause[Op.or] = [
                 { title: { [Op.iLike]: `%${searchTerm}%` } },
                 { description: { [Op.iLike]: `%${searchTerm}%` } },
                 { city: { [Op.iLike]: `%${searchTerm}%` } },
                 { state: { [Op.iLike]: `%${searchTerm}%` } },
-                { street: { [Op.iLike]: `%${searchTerm}%` } }
-            ]
-        };
+                { address: { [Op.iLike]: `%${searchTerm}%` } }
+            ];
+        }
 
-        // Add additional filters
         if (filters.propertyType) {
             whereClause.propertyType = filters.propertyType;
         }
-        
+
+        // 🔎 Price range
         if (filters.minPrice || filters.maxPrice) {
-            whereClause.price = {};
-            if (filters.minPrice) whereClause.price[Op.gte] = parseFloat(filters.minPrice);
-            if (filters.maxPrice) whereClause.price[Op.lte] = parseFloat(filters.maxPrice);
+            const priceFilter = {};
+            if (!isNaN(parseFloat(filters.minPrice))) {
+                priceFilter[Op.gte] = parseFloat(filters.minPrice);
+            }
+            if (!isNaN(parseFloat(filters.maxPrice))) {
+                priceFilter[Op.lte] = parseFloat(filters.maxPrice);
+            }
+            if (Object.keys(priceFilter).length > 0) {
+                whereClause.price = priceFilter;
+            }
         }
 
         const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
@@ -460,7 +467,7 @@ exports.searchProperties = async (searchTerm, filters = {}, page = 1, limit = 10
                 {
                     model: User,
                     as: 'owner',
-                    attributes: ['userId', 'firstName', 'lastName']
+                    attributes: ['userId', 'firstName', 'lastName'] 
                 },
                 {
                     model: PropertyMedia,
@@ -476,21 +483,23 @@ exports.searchProperties = async (searchTerm, filters = {}, page = 1, limit = 10
         });
 
         return {
-            data: properties,
-            pagination: {
-                currentPage: pageNumber,
-                pageSize,
-                totalProperties,
-                totalPages: Math.ceil(totalProperties / pageSize)
-            },
-            searchTerm,
-            statusCode: StatusCodes.OK
+            data: {
+                properties,
+                pagination: {
+                    currentPage: pageNumber,
+                    pageSize,
+                    totalProperties,
+                    totalPages: Math.ceil(totalProperties / pageSize)
+                },
+                searchTerm,
+                statusCode: StatusCodes.OK
+            }
         };
 
     } catch (e) {
         console.error("Error searching properties:", e);
         return {
-            error: e.message,
+            error: e.message || "Internal server error",
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR
         };
     }
@@ -512,8 +521,8 @@ exports.getPropertyStats = async (userId = null) => {
         });
 
         const totalProperties = await Property.count({ where: whereClause });
-        const availableProperties = await Property.count({ 
-            where: { ...whereClause, status: 'AVAILABLE' } 
+        const availableProperties = await Property.count({
+            where: { ...whereClause, status: 'AVAILABLE' }
         });
 
         return {
@@ -624,7 +633,7 @@ exports.updatePropertyStatus = async (propertyId, status, userId) => {
         // Update status
         await property.update({ status });
 
-        logInfo('Property status updated', { 
+        logInfo('Property status updated', {
             propertyId,
             oldStatus: property.status,
             newStatus: status,

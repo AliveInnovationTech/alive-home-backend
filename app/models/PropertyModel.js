@@ -68,6 +68,20 @@ module.exports = (sequelize, DataTypes) => {
                     key: 'user_id'
                 }
             },
+            title: {
+                type: DataTypes.STRING,
+                allowNull: false
+            },
+            price: {
+                type: DataTypes.DECIMAL(12, 2),
+                allowNull: false,
+                validate: {
+                    min: {
+                        args: [0],
+                        msg: 'property price cannot be negative'
+                    }
+                }
+            },
             address: {
                 type: DataTypes.STRING,
                 allowNull: false
