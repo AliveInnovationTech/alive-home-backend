@@ -1,19 +1,19 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const { Op } = require("sequelize");
-const OpenAI = require("openai");
+const {GoogleGenAI} = require ("@google/genai")
 const sequelize = require('../../lib/database');
 const { Property, UserBehavior, Recommendation, User, Listing, PropertyMedia } = sequelize.models;
 const logger = require('../utils/logger');
 
 // OpenAI API configuration
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4';
-const OPENAI_MAX_TOKENS = parseInt(process.env.OPENAI_MAX_TOKENS) || 1000;
-const OPENAI_TEMPERATURE = parseFloat(process.env.OPENAI_TEMPERATURE) || 0.7;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const MODEL = process.env.MODEL || 'gemini-2.0-flash'
+const GEMINI_MAX_TOKENS = parseInt(process.env.GEMINI_MAX_TOKENS) || 10000
+const GEMINI_TEMPERATURE = parseFloat(process.env.GEMINI_TEMPERATURE) || 2;
 
 // Initialize OpenAI client
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const gemini = new GoogleGenAI({ apiKey:GEMINI_API_KEY });
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -208,7 +208,7 @@ Return only valid JSON array with the following structure:
 };
 
 // Process OpenAI response with improved JSON parsing
-const processOpenAIResponse = (response) => {
+const processGeminiAIResponse = (response) => {
     try {
         const content = response.choices[0].message.content;
 
@@ -233,7 +233,7 @@ const processOpenAIResponse = (response) => {
         const recommendations = JSON.parse(jsonContent);
 
         if (!Array.isArray(recommendations)) {
-            throw new Error('Invalid response format from OpenAI');
+            throw new Error('Invalid response format from GeminiAI');
         }
 
         return recommendations.map(rec => {
@@ -255,7 +255,7 @@ const processOpenAIResponse = (response) => {
             };
         });
     } catch (error) {
-        logger.error("Error processing OpenAI response:", error);
+        logger.error("Error processing Gemini response:", error);
         return [];
     }
 };
@@ -323,9 +323,9 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
         const prompt = buildRecommendationPrompt(userPreferences, propertiesWithProximity, userLocation);
 
         // Call OpenAI API
-        if (!OPENAI_API_KEY) {
+        if (!GEMINI_API_KEY) {
             // Fallback to heuristic recommendations when OpenAI is unavailable
-            logger.warn("OpenAI API key not configured, using fallback recommendations");
+            logger.warn("Gemini API key not configured, using fallback recommendations");
 
             const fallbackRecommendations = propertiesWithProximity
                 .sort((a, b) => b.proximityScore - a.proximityScore)
@@ -396,9 +396,9 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                 statusCode: StatusCodes.OK
             };
         }
-
-        const openaiResponse = await openai.chat.completions.create({
-            model: OPENAI_MODEL,
+//completions
+        const geminiAIResponse = await gemini.chats.create({
+            model:MODEL,
             messages: [
                 {
                     role: "system",
@@ -409,13 +409,13 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                     content: prompt
                 }
             ],
-            max_tokens: OPENAI_MAX_TOKENS,
-            temperature: OPENAI_TEMPERATURE,
+            max_tokens: GEMINI_MAX_TOKENS,
+            temperature: GEMINI_TEMPERATURE,
             response_format: { type: 'json_object' }
         });
 
         // Process OpenAI response
-        const aiRecommendations = processOpenAIResponse(openaiResponse);
+        const aiRecommendations = processGeminiAIResponse(geminiAIResponse);
 
         if (aiRecommendations.length === 0) {
             return {
@@ -512,12 +512,12 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
 
         if (error.status === 401) {
             return {
-                error: "OpenAI API authentication failed",
+                error: "GeminiAI API authentication failed",
                 statusCode: StatusCodes.UNAUTHORIZED
             };
         } else if (error.status === 429) {
             return {
-                error: "OpenAI API rate limit exceeded",
+                error: "GeminiAI API rate limit exceeded",
                 statusCode: StatusCodes.TOO_MANY_REQUESTS
             };
         }

@@ -197,7 +197,24 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 },
                 defaultValue: null
-            }
+            },
+            isDeveloperProfileFiled: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
+            isRealtorProfileFiled: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
+            isHomeownerProfileFiled: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
+            isBuyerProfileFiled: {
+                type: DataTypes.BOOLEAN,
+                defaultValue: false
+            },
+
         },
         {
             sequelize,

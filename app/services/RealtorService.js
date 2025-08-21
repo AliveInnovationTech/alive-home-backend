@@ -2,9 +2,9 @@
 const { StatusCodes } = require("http-status-codes");
 const sequelize = require("../../lib/database");
 const realtorValidator = require("../validators/RealtorValidator");
-const cloudinary = require("../utils/cloudinary"); 
-const logger = require("../utils/logger");
+const cloudinary = require("../utils/cloudinary");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
+const { Op, Sequelize } = require("sequelize");
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -52,7 +52,14 @@ exports.createRealtorProfile = async (payload, user) => {
             isVerified: false
         });
 
-        const realtorWithUser = await Realtor.findByPk(realtor.realtorId, {
+        await User.update(
+            { isRealtorProfileFiled: true },
+            { where: { userId: user.userId } }
+        );
+
+
+        const realtorWithUser = await Realtor.findOne({
+            where: { realtorId: realtor.realtorId },
             include: [
                 {
                     model: User,
@@ -63,13 +70,15 @@ exports.createRealtorProfile = async (payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl']
+                        'profilePicture',
+                        'isRealtorProfileFiled'
+                    ]
                 }
             ]
         });
 
         logInfo('Realtor profile created successfully', { realtorId: realtorWithUser.realtorId, userId: user.userId });
-        
+
         return {
             data: {
                 realtorId: realtorWithUser.realtorId,
@@ -105,7 +114,7 @@ exports.getRealtorProfile = async (realtorId) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl']
+                        'profilePicture']
                 }
             ]
         });
@@ -141,6 +150,60 @@ exports.getRealtorProfile = async (realtorId) => {
     }
 };
 
+exports.getMyRealtorProfile = async (userId) => {
+    try {
+        const { User, Realtor } = getModels();
+
+        const realtor = await Realtor.findOne({
+            where: { userId },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePicture'
+                    ]
+                }
+            ]
+        });
+
+        if (!realtor) {
+            return {
+                error: "Realtor profile not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                realtorId: realtor.realtorId,
+                licenseNumber: realtor.licenseNumber,
+                brokerageName: realtor.brokerageName,
+                yearsOfExperience: realtor.yearsOfExperience,
+                specialties: realtor.specialties,
+                certifications: realtor.certifications,
+                verificationDocsUrls: realtor.verificationDocsUrls,
+                isVerified: realtor.isVerified,
+                user: realtor.user
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.error("An error occurred while retrieving my realtor profile:", e);
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        };
+    }
+};
+
+
 exports.updateRealtorProfile = async (realtorId, payload, user) => {
     try {
         const validatorError = await realtorValidator.updateRealtorProfile(payload);
@@ -162,7 +225,7 @@ exports.updateRealtorProfile = async (realtorId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (realtor.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (realtor.userId !== user.userId && user.role !== "ADMIN" && user.role !== "SYSADMIN") {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -172,7 +235,7 @@ exports.updateRealtorProfile = async (realtorId, payload, user) => {
         const updateData = {};
         const allowedFields = [
             'brokerageName', 'yearsOfExperience', 'specialties',
-            'certifications', 'verificationDocsUrls'
+            'certifications',
         ];
 
         allowedFields.forEach(field => {
@@ -194,7 +257,7 @@ exports.updateRealtorProfile = async (realtorId, payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl']
+                        'profilePicture']
                 }
             ]
         });
@@ -233,43 +296,45 @@ exports.getAllRealtors = async (page = 1, limit = 10, search = '', specialty = '
 
         const whereClause = {};
 
-        // Search by user name, email, or brokerage name
-        if (search) {
-            whereClause['$or'] = [
-                { '$user.firstName$': { [require('sequelize').Op.iLike]: `%${search}%` } },
-                { '$user.lastName$': { [require('sequelize').Op.iLike]: `%${search}%` } },
-                { '$user.email$': { [require('sequelize').Op.iLike]: `%${search}%` } },
-                { brokerageName: { [require('sequelize').Op.iLike]: `%${search}%` } }
-            ];
-        }
-
-        // Filter by specialty
+        // Specialty filter
         if (specialty) {
-            whereClause.specialties = {
-                [require('sequelize').Op.contains]: [specialty]
-            };
+            whereClause.specialties = { [Op.contains]: [specialty] };
         }
 
-        // Filter by verification status
+        // Verification filter
         if (isVerified !== '') {
             whereClause.isVerified = isVerified === 'true';
         }
 
+        // Build include for user
+        const include = [
+            {
+                model: User,
+                as: 'user',
+                attributes: [
+                    'userId',
+                    'firstName',
+                    'lastName',
+                    'email',
+                    'phoneNumber',
+                    'profilePicture'
+                ],
+            }
+        ];
+
+        // Search by user fields or brokerageName
+        if (search) {
+            whereClause[Op.or] = [
+                Sequelize.where(Sequelize.col("user.firstName"), { [Op.iLike]: `%${search}%` }),
+                Sequelize.where(Sequelize.col("user.lastName"), { [Op.iLike]: `%${search}%` }),
+                Sequelize.where(Sequelize.col("user.email"), { [Op.iLike]: `%${search}%` }),
+                { brokerageName: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
         const { rows: realtors, count: totalRealtors } = await Realtor.findAndCountAll({
             where: whereClause,
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: [
-                        'userId',
-                        'firstName',
-                        'lastName',
-                        'email',
-                        'phoneNumber',
-                        'profilePictureUrl']
-                }
-            ],
+            include,
             offset,
             limit: pageSize,
             order: [['createdAt', 'DESC']]
@@ -320,7 +385,7 @@ exports.deleteRealtorProfile = async (realtorId, user) => {
         }
 
         // Check if user owns this profile or is admin or is not super admin
-        if (realtor.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (realtor.userId !== user.userId && user.role !== "ADMIN" && user.role !== "SYSADMIN") {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -387,62 +452,10 @@ exports.verifyRealtor = async (realtorId, verified, user) => {
     }
 };
 
-exports.getMyRealtorProfile = async (userId) => {
-    try {
-        const { User, Realtor } = getModels();
-
-        const realtor = await Realtor.findOne({
-            where: { userId },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: [
-                        'userId',
-                        'firstName',
-                        'lastName',
-                        'email',
-                        'phoneNumber',
-                        'profilePictureUrl'
-                    ]
-                }
-            ]
-        });
-
-        if (!realtor) {
-            return {
-                error: "Realtor profile not found",
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        return {
-            data: {
-                realtorId: realtor.realtorId,
-                licenseNumber: realtor.licenseNumber,
-                brokerageName: realtor.brokerageName,
-                yearsOfExperience: realtor.yearsOfExperience,
-                specialties: realtor.specialties,
-                certifications: realtor.certifications,
-                verificationDocsUrls: realtor.verificationDocsUrls,
-                isVerified: realtor.isVerified,
-                user: realtor.user
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        console.error("An error occurred while retrieving my realtor profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
-    }
-};
 
 exports.uploadVerificationDocuments = async (realtorId, files, user) => {
     try {
-        const { User, Realtor } = getModels();
+        const {Realtor } = getModels();
 
         const realtor = await Realtor.findByPk(realtorId);
         if (!realtor) {
@@ -470,7 +483,7 @@ exports.uploadVerificationDocuments = async (realtorId, files, user) => {
         const uploadedUrls = [];
         for (const file of files) {
             const result = await cloudinary.uploader.upload(file.path, {
-            folder: "Alive/realtor_verification_docs"
+                folder: "Alive/realtor_verification_docs"
             });
             uploadedUrls.push(result.secure_url && result.public_id);
         }
