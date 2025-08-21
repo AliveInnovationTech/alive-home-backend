@@ -51,22 +51,19 @@ exports.createBuyerProfile = async (payload, user) => {
             propertyType: payload.propertyType || 'HOUSE',
         });
 
-        const buyerWithUser = await Buyer.findByPk(buyer.buyerId, {
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: [
-                        'userId',
-                        'firstName',
-                        'lastName',
-                        'email',
-                        'phoneNumber',
-                        'profilePictureUrl'
-                    ]
-                }
-            ]
+
+        const buyerWithUser = await Buyer.findOne({
+            where: { buyerId: buyer.buyerId },
+            include: [{
+                model: User,
+                as: 'user',
+                attributes: [
+                    'userId', 'firstName', 'lastName',
+                    'email', 'phoneNumber', 'profilePicture'
+                ]
+            }]
         });
+
 
         logInfo('Buyer profile created successfully', { buyerId: buyerWithUser.buyerId, userId: user.userId });
 
@@ -85,8 +82,16 @@ exports.createBuyerProfile = async (payload, user) => {
         };
 
     } catch (e) {
-        return handleServiceError('BuyerService', 'createBuyerProfile', e, 'An error occurred while creating buyer profile');
-    }
+        console.error("Sequelize Error:", e.message, e.errors || e);
+        return handleServiceError(
+            "BuyerService",
+            "createBuyerProfile",
+            e,
+            "An error occurred while creating buyer profile"
+        );
+    };
+
+
 };
 
 exports.getBuyerProfile = async (buyerId) => {
@@ -104,7 +109,7 @@ exports.getBuyerProfile = async (buyerId) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
@@ -133,6 +138,144 @@ exports.getBuyerProfile = async (buyerId) => {
 
     } catch (e) {
         console.error("An error occurred while retrieving buyer profile:", e);
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        };
+    }
+};
+
+exports.getMyBuyerProfile = async (userId) => {
+    try {
+        const { User, Buyer } = getModels();
+
+        const buyer = await Buyer.findOne({
+            where: { userId },
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePicture'
+                    ]
+                }
+            ]
+        });
+
+        if (!buyer) {
+            return {
+                error: "Buyer profile not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                buyerId: buyer.buyerId,
+                minimumBudget: buyer.minimumBudget,
+                maximumBudget: buyer.maximumBudget,
+                preApproved: buyer.preApproved,
+                preApprovalAmount: buyer.preApprovalAmount,
+                preferredLocations: buyer.preferredLocations,
+                propertyType: buyer.propertyType,
+                user: buyer.user
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.error("An error occurred while retrieving my buyer profile:", e);
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        };
+    }
+};
+
+exports.getAllBuyers = async (page = 1, limit = 10, search = '', propertyType = '', minBudget = '', maxBudget = '') => {
+    try {
+        const { User, Buyer } = getModels();
+
+        const pageNumber = Math.max(parseInt(page, 10), 1);
+        const pageSize = Math.max(parseInt(limit, 10), 1);
+        const offset = (pageNumber - 1) * pageSize;
+
+        const whereClause = {};
+
+        // Search by user name or email
+        if (search) {
+            whereClause['$user.firstName$'] = {
+                [require('sequelize').Op.iLike]: `%${search}%`
+            };
+        }
+
+        // Filter by property type
+        if (propertyType) {
+            whereClause.propertyType = propertyType;
+        }
+
+        // Filter by budget range
+        if (minBudget) {
+            whereClause.minimumBudget = {
+                [require('sequelize').Op.gte]: parseFloat(minBudget)
+            };
+        }
+
+        if (maxBudget) {
+            whereClause.maximumBudget = {
+                [require('sequelize').Op.lte]: parseFloat(maxBudget)
+            };
+        }
+
+        const { rows: buyers, count: totalBuyers } = await Buyer.findAndCountAll({
+            where: whereClause,
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePicture']
+                }
+            ],
+            offset,
+            limit: pageSize,
+            order: [['createdAt', 'DESC']]
+        });
+
+        const data = buyers.map(buyer => ({
+            buyerId: buyer.buyerId,
+            minimumBudget: buyer.minimumBudget,
+            maximumBudget: buyer.maximumBudget,
+            preApproved: buyer.preApproved,
+            preApprovalAmount: buyer.preApprovalAmount,
+            preferredLocations: buyer.preferredLocations,
+            propertyType: buyer.propertyType,
+            user: buyer.user
+        }));
+
+        return {
+            data,
+            pagination: {
+                currentPage: pageNumber,
+                pageSize,
+                totalBuyers,
+                totalPages: Math.ceil(totalBuyers / pageSize)
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.error("An error occurred while fetching buyers:", e);
         return {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR
@@ -195,7 +338,7 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl']
+                        'profilePicture']
                 }
             ]
         });
@@ -222,132 +365,6 @@ exports.updateBuyerProfile = async (buyerId, payload, user) => {
         };
     }
 };
-
-exports.getAllBuyers = async (page = 1, limit = 10, search = '', propertyType = '', minBudget = '', maxBudget = '') => {
-    try {
-        const { User, Buyer } = getModels();
-
-        const pageNumber = Math.max(parseInt(page, 10), 1);
-        const pageSize = Math.max(parseInt(limit, 10), 1);
-        const offset = (pageNumber - 1) * pageSize;
-
-        const whereClause = {};
-
-        // Search by user name or email
-        if (search) {
-            whereClause['$user.firstName$'] = {
-                [require('sequelize').Op.iLike]: `%${search}%`
-            };
-        }
-
-        // Filter by property type
-        if (propertyType) {
-            whereClause.propertyType = propertyType;
-        }
-
-        // Filter by budget range
-        if (minBudget) {
-            whereClause.minimumBudget = {
-                [require('sequelize').Op.gte]: parseFloat(minBudget)
-            };
-        }
-
-        if (maxBudget) {
-            whereClause.maximumBudget = {
-                [require('sequelize').Op.lte]: parseFloat(maxBudget)
-            };
-        }
-
-        const { rows: buyers, count: totalBuyers } = await Buyer.findAndCountAll({
-            where: whereClause,
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: [
-                        'userId',
-                        'firstName',
-                        'lastName',
-                        'email',
-                        'phoneNumber',
-                        'profilePictureUrl']
-                }
-            ],
-            offset,
-            limit: pageSize,
-            order: [['createdAt', 'DESC']]
-        });
-
-        const data = buyers.map(buyer => ({
-            buyerId: buyer.buyerId,
-            minimumBudget: buyer.minimumBudget,
-            maximumBudget: buyer.maximumBudget,
-            preApproved: buyer.preApproved,
-            preApprovalAmount: buyer.preApprovalAmount,
-            preferredLocations: buyer.preferredLocations,
-            propertyType: buyer.propertyType,
-            user: buyer.user
-        }));
-
-        return {
-            data,
-            pagination: {
-                currentPage: pageNumber,
-                pageSize,
-                totalBuyers,
-                totalPages: Math.ceil(totalBuyers / pageSize)
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        console.error("An error occurred while fetching buyers:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
-    }
-};
-
-exports.deleteBuyerProfile = async (buyerId, user) => {
-    try {
-        const { User, Buyer } = getModels();
-
-        const buyer = await Buyer.findByPk(buyerId);
-        if (!buyer) {
-            return {
-                error: "Buyer profile not found",
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        // Check if user owns this profile or is admin
-        if (buyer.userId !== user.userId && user.role !== 'ADMIN' && user.role !== 'SYSADMIN') {
-            return {
-                error: "Unauthorized to delete this profile",
-                statusCode: StatusCodes.FORBIDDEN
-            };
-        }
-
-        await buyer.destroy();
-
-        return {
-            data: {
-                message: "Buyer profile deleted successfully"
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        console.error("An error occurred while deleting buyer profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
-    }
-};
-
-
 
 exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
     try {
@@ -398,7 +415,7 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
@@ -427,57 +444,6 @@ exports.updatePreApprovalStatus = async (buyerId, payload, user) => {
     }
 };
 
-exports.getMyBuyerProfile = async (userId) => {
-    try {
-        const { User, Buyer } = getModels();
-
-        const buyer = await Buyer.findOne({
-            where: { userId },
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: [
-                        'userId',
-                        'firstName',
-                        'lastName',
-                        'email',
-                        'phoneNumber',
-                        'profilePictureUrl'
-                    ]
-                }
-            ]
-        });
-
-        if (!buyer) {
-            return {
-                error: "Buyer profile not found",
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        return {
-            data: {
-                buyerId: buyer.buyerId,
-                minimumBudget: buyer.minimumBudget,
-                maximumBudget: buyer.maximumBudget,
-                preApproved: buyer.preApproved,
-                preApprovalAmount: buyer.preApprovalAmount,
-                preferredLocations: buyer.preferredLocations,
-                propertyType: buyer.propertyType,
-                user: buyer.user
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        console.error("An error occurred while retrieving my buyer profile:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
-    }
-};
 
 exports.searchProperties = async (buyerId, query) => {
     try {
@@ -527,3 +493,47 @@ exports.searchProperties = async (buyerId, query) => {
         };
     }
 };
+
+exports.deleteBuyerProfile = async (buyerId, user) => {
+    try {
+        const {  Buyer } = getModels();
+
+        const buyer = await Buyer.findByPk(buyerId);
+        if (!buyer) {
+            return {
+                error: "Buyer profile not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        // Check if user owns this profile or is admin
+        if (buyer.userId !== user.userId && user.roleName !== 'ADMIN' && user.roleName !== 'SYSADMIN') {
+            return {
+                error: "Unauthorized to delete this profile",
+                statusCode: StatusCodes.FORBIDDEN
+            };
+        }
+
+        await buyer.destroy();
+
+        return {
+            data: {
+                message: "Buyer profile deleted successfully"
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        console.error("An error occurred while deleting buyer profile:", e);
+        return {
+            error: e.message,
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+        };
+    }
+};
+
+
+
+
+
+

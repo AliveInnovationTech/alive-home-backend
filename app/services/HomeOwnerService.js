@@ -48,7 +48,8 @@ exports.createHomeOwnerProfile = async (payload, user) => {
             verificationDocsUrls: payload.verificationDocsUrls || []
         });
 
-        const ownerWithUser = await Owner.findByPk(owner.ownerId, {
+        const ownerWithUser = await Owner.findOne({
+            where: { ownerId: owner.ownerId },
             include: [
                 {
                     model: User,
@@ -59,14 +60,14 @@ exports.createHomeOwnerProfile = async (payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
         });
 
         logInfo('Homeowner profile created successfully', { ownerId: ownerWithUser.ownerId, userId: user.userId });
-        
+
         return {
             data: {
                 ownerId: ownerWithUser.ownerId,
@@ -99,7 +100,7 @@ exports.getHomeOwnerProfile = async (ownerId) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
@@ -154,7 +155,7 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
         }
 
         // Check if user owns this profile or is admin or superadmin
-        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (owner.userId !== user.userId && user.role !== 'ADMIN' && user.role !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to update this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -187,7 +188,7 @@ exports.updateHomeOwnerProfile = async (ownerId, payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
@@ -241,7 +242,7 @@ exports.getAllHomeOwners = async (page = 1, limit = 10, search = '') => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ],
@@ -291,7 +292,7 @@ exports.deleteHomeOwnerProfile = async (ownerId, user) => {
         }
 
         // Check if user owns this profile or is admin or superadmin
-        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (owner.userId !== user.userId && user.roleName !== 'ADMIN' && user.roleName !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -318,10 +319,9 @@ exports.deleteHomeOwnerProfile = async (ownerId, user) => {
 
 exports.verifyHomeOwner = async (ownerId, verified, user) => {
     try {
-        const { User, Owner } = getModels();
+        const { Owner } = getModels();
 
-        // Only admins can verify homeowners
-        if (user.role !== 'admin' && user.role !== 'superadmin') {
+        if (user.roleName !== "ADMIN" && user.roleName !== "SYSADMIN") {
             return {
                 error: "Unauthorized to verify homeowners",
                 statusCode: StatusCodes.FORBIDDEN
@@ -343,19 +343,20 @@ exports.verifyHomeOwner = async (ownerId, verified, user) => {
                 ownerId: owner.ownerId,
                 primaryResidence: owner.primaryResidence,
                 ownershipVerified: owner.ownershipVerified,
-                message: `Homeowner ${verified ? 'verified' : 'unverified'} successfully`
+                message: `Homeowner ${verified ? "verified" : "unverified"} successfully`
             },
             statusCode: StatusCodes.OK
         };
 
     } catch (e) {
-        console.error("An error occurred while verifying homeowner:", e);
+        console.error("❌ An error occurred while verifying homeowner:", e);
         return {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR
         };
     }
 };
+
 
 exports.getMyHomeOwnerProfile = async (userId) => {
     try {
@@ -372,7 +373,7 @@ exports.getMyHomeOwnerProfile = async (userId) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePictureUrl'
+                        'profilePicture'
                     ]
                 }
             ]
@@ -418,7 +419,7 @@ exports.uploadVerificationDocuments = async (ownerId, files, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (owner.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (owner.userId !== user.userId && user.roleName !== 'ADMIN' && user.roleName !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to upload documents for this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -434,7 +435,7 @@ exports.uploadVerificationDocuments = async (ownerId, files, user) => {
         // Upload files to Cloudinary and get their URLs
         const uploadedUrls = [];
         for (const file of files) {
-            const result = await cloudinary.uploadFile(file.path, {
+            const result = await cloudinary.uploader.upload(file.path, {
                 folder: "homeowner_verification_docs"
             });
             if (result && result.secure_url) {

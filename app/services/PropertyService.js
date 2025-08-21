@@ -1,15 +1,27 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes");
 const { Op } = require("sequelize");
-const Property = require("../models/PropertyModel");
-const User = require("../models/UserModel");
-const PropertyMedia = require("../models/PropertyMediaModel");
-const Listing = require("../models/ListingModel");
+const sequelize = require("../../lib/database")
 const cloudinary = require("../utils/cloudinary");
 const logger = require("../utils/logger");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
 
+const getModels = () => {
+    if (!sequelize.models.Property || !sequelize.models.PropertyMedia
+        || !sequelize.models.Listing || !sequelize.models.User) {
+        throw new Error('Models not loaded yet');
+    }
+    return {
+        User: sequelize.models.User,
+        Property: sequelize.models.Property,
+        PropertyMedia: sequelize.models.PropertyMedia,
+        Listing: sequelize.models.Listing
+    };
+};
+
 exports.createProperty = async (body, files, userId) => {
+
+
     try {
         if (!body.title || !body.description || !body.address || !body.city || !body.state) {
             return {
@@ -17,6 +29,7 @@ exports.createProperty = async (body, files, userId) => {
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
+        const { Property, PropertyMedia, User } = getModels()
 
         const property = await Property.create({
             ownerId: userId,
@@ -75,7 +88,7 @@ exports.createProperty = async (body, files, userId) => {
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary']
+                    attributes: ['mediaId', ' cloudinaryUrl', 'mediaType', 'isMainImage']
                 }
             ]
         });
@@ -100,6 +113,7 @@ exports.createProperty = async (body, files, userId) => {
 };
 
 exports.getPropertyById = async (propertyId, includeAssociations = true) => {
+    const { Listing, Property, PropertyMedia, User } = getModels()
     try {
         const includeOptions = includeAssociations ? [
             {
@@ -110,7 +124,7 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
             {
                 model: PropertyMedia,
                 as: 'media',
-                attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary', 'createdAt']
+                attributes: ['mediaId', ' cloudinaryUrl', 'mediaType', 'isMainImage', 'createdAt']
             },
             {
                 model: Listing,
@@ -147,6 +161,10 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
 
 exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
     try {
+
+        const { Property, PropertyMedia, User } = getModels()
+
+
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -194,9 +212,9 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    where: { isPrimary: true },
+                    where: { isMainImage: true },
                     required: false,
-                    attributes: ['mediaUrl']
+                    attributes: [' cloudinaryUrl']
                 }
             ],
             order: [['createdAt', 'DESC']],
@@ -228,13 +246,15 @@ exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
 
+        const { Listing, Property, PropertyMedia, User } = getModels()
+
         const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
             where: { ownerId },
             include: [
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    where: { isPrimary: true },
+                    where: { isMainImage: true },
                     required: false,
                     attributes: ['mediaUrl']
                 },
@@ -271,6 +291,8 @@ exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
 
 exports.updateProperty = async (propertyId, body, files, userId) => {
     try {
+        const { Listing, Property, PropertyMedia, User } = getModels()
+
         const property = await Property.findByPk(propertyId);
 
         if (!property) {
@@ -293,7 +315,7 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
         const allowedFields = [
             'title', 'description', 'address', 'city', 'state', 'country',
             'zipCode', 'propertyType', 'bedrooms', 'bathrooms', 'squareFootage',
-            'yearBuilt', 'lotSize', 'price', 'status'
+            'yearBuilt', 'lotSize', 'price','status', 'latitude','longitude'
         ];
 
         allowedFields.forEach(field => {
@@ -339,7 +361,7 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary']
+                    attributes: ['mediaId', 'cloudinaryUrl', 'mediaType', 'isMainImage']
                 }
             ]
         });
@@ -360,6 +382,9 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
 
 exports.deleteProperty = async (propertyId, userId) => {
     try {
+
+        const { Listing, Property, PropertyMedia, User } = getModels()
+
         const property = await Property.findByPk(propertyId);
 
         if (!property) {
@@ -427,6 +452,8 @@ exports.deleteProperty = async (propertyId, userId) => {
 
 exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit = 10) => {
     try {
+        const { Listing, Property, PropertyMedia, User } = getModels()
+
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
         const offset = (pageNumber - 1) * pageSize;
@@ -467,14 +494,14 @@ exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit
                 {
                     model: User,
                     as: 'owner',
-                    attributes: ['userId', 'firstName', 'lastName'] 
+                    attributes: ['userId', 'firstName', 'lastName']
                 },
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    where: { isPrimary: true },
+                    where: { isMainImage: true },
                     required: false,
-                    attributes: ['mediaUrl']
+                    attributes: [' cloudinaryId']
                 }
             ],
             order: [['createdAt', 'DESC']],
@@ -507,6 +534,8 @@ exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit
 
 exports.getPropertyStats = async (userId = null) => {
     try {
+        const { Property } = getModels()
+
         const whereClause = userId ? { ownerId: userId } : {};
 
         const stats = await Property.findAll({
@@ -549,6 +578,8 @@ exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
         const pageSize = parseInt(limit) || 10;
         const offset = (pageNumber - 1) * pageSize;
 
+        const { Property, PropertyMedia, User } = getModels()
+
         const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
             where: { ownerId: userId },
             include: [
@@ -560,7 +591,7 @@ exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
                 {
                     model: PropertyMedia,
                     as: 'media',
-                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isPrimary']
+                    attributes: ['mediaId', ' cloudinaryUrl', 'mediaType', 'isMainImage']
                 }
             ],
             order: [['createdAt', 'DESC']],
@@ -589,7 +620,11 @@ exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
         };
 
     } catch (e) {
-        return handleServiceError('PropertyService', 'getPropertiesByUser', e, 'Error fetching properties by user');
+        return handleServiceError(
+            'PropertyService',
+            'getPropertiesByUser',
+            e,
+            'Error fetching properties by user');
     }
 };
 
@@ -603,6 +638,7 @@ exports.updatePropertyStatus = async (propertyId, status, userId) => {
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
+        const { Property, User } = getModels()
 
         // Find property and check ownership
         const property = await Property.findByPk(propertyId, {

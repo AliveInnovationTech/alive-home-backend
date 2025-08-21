@@ -13,6 +13,11 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: 'propertyId',
                 as: 'listings'
             });
+            Property.hasMany(models.PropertyMedia, {
+                foreignKey: 'propertyId',
+                as: 'media',
+                onDelete: 'CASCADE'
+            });
 
             Property.hasMany(models.Inquiry, {
                 foreignKey: 'propertyId',
@@ -187,6 +192,19 @@ module.exports = (sequelize, DataTypes) => {
             features: {
                 type: DataTypes.JSONB,
                 defaultValue: []
+            },
+            status: {
+                type: DataTypes.ENUM(
+                    'active',
+                    'pending',
+                    'draft',
+                    'sold',
+                    'unavailable',
+                    'AVAILABLE',
+                    'SOLD',
+                    'PENDING',
+                    'DRAFT'
+                )
             }
         },
         {
