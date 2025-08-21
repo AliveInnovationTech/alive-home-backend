@@ -36,12 +36,10 @@ router.delete("/:buyerId", authenticateUser,
 
 
 router.patch("/:buyerId/pre-approval", authenticateUser,
-    authorizeRoles("ADMIN", "SYSADMIN"),
+    authorizeRoles("BUYER","ADMIN", "SYSADMIN"),
     controller.updatePreApprovalStatus);
 
 
-router.get("/:buyerId/properties", authenticateUser,
-    authorizeRoles("BUYER", "ADMIN", "SYSADMIN"),
-    controller.searchProperties);
+router.get("/:buyerId/properties", authenticateUser, controller.searchProperties);
 
 module.exports = router;

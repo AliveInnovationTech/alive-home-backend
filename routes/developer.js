@@ -8,42 +8,44 @@ const upload = require("../app/utils/docUploader")
 // Create developer profile
 router.post("/",
     authenticateUser,
-    authorizeRoles('developer', 'admin', 'superadmin'),
+    authorizeRoles("DEVELOPER"),
     upload.single("companyLogoUrl"),
     controller.createDeveloperProfile);
 
 // Get all developers with pagination and search
 router.get("/",
     authenticateUser,
-    authorizeRoles('admin', 'superadmin'),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.getAllDevelopers);
 
 // Get my developer profile
 router.get("/me",
     authenticateUser,
-    authorizeRoles('buyer', 'admin', 'superadmin'),
+    authorizeRoles("DEVELOPER", "ADMIN", "SYSADMIN"),
     controller.getMyDeveloperProfile);
 
 // Get specific developer profile
 router.get("/:developerId",
+    authenticateUser,
+    authorizeRoles("DEVELOPER", "ADMIN", "SYSADMIN"),
     controller.getDeveloperProfile);
 
 // Update developer profile
 router.put("/:developerId",
     authenticateUser,
-    authorizeRoles('buyer', 'admin', 'superadmin'),
+    authorizeRoles("DEVELOPER", "ADMIN", "SYSADMIN"),
     controller.updateDeveloperProfile);
 
 // Delete developer profile
 router.delete("/:developerId",
     authenticateUser,
-    authorizeRoles('admin', 'superadmin'),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.deleteDeveloperProfile);
 
-// Verify developer (admin and superadmin)
+// Verify developer (admin and sysadmin)
 router.patch("/:developerId/verify",
     authenticateUser,
-    authorizeRoles('admin', 'superadmin'),
+    authorizeRoles("ADMIN", "SYSADMIN"),
     controller.verifyDeveloper);
 
 module.exports = router;
