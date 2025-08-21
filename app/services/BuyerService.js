@@ -51,6 +51,10 @@ exports.createBuyerProfile = async (payload, user) => {
             propertyType: payload.propertyType || 'HOUSE',
         });
 
+        await User.update(
+            { isBuyerProfileFiled: true },
+            { where: { userId: user.userId } }
+        );
 
         const buyerWithUser = await Buyer.findOne({
             where: { buyerId: buyer.buyerId },
@@ -58,8 +62,13 @@ exports.createBuyerProfile = async (payload, user) => {
                 model: User,
                 as: 'user',
                 attributes: [
-                    'userId', 'firstName', 'lastName',
-                    'email', 'phoneNumber', 'profilePicture'
+                    'userId',
+                    'firstName',
+                    'lastName',
+                    'email',
+                    'phoneNumber',
+                    'profilePicture',
+                    'isBuyerProfileFiled'
                 ]
             }]
         });
@@ -496,7 +505,7 @@ exports.searchProperties = async (buyerId, query) => {
 
 exports.deleteBuyerProfile = async (buyerId, user) => {
     try {
-        const {  Buyer } = getModels();
+        const { Buyer } = getModels();
 
         const buyer = await Buyer.findByPk(buyerId);
         if (!buyer) {

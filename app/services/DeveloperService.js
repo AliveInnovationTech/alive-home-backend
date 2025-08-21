@@ -62,6 +62,11 @@ exports.createDeveloperProfile = async (payload, user, file) => {
             cloudinary_id: result.public_id
         });
 
+        await User.update(
+            { isDeveloperProfileFiled: true },
+            { where: { userId: user.userId } }
+        );
+
         const developerWithUser = await Developer.findOne({
             where: { developerId: developer.developerId },
             include: [
@@ -74,7 +79,9 @@ exports.createDeveloperProfile = async (payload, user, file) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePicture']
+                        'profilePicture',
+                        'isDeveloperProfileFiled'
+                    ]
                 }
             ]
         });
@@ -288,7 +295,7 @@ exports.verifyDeveloper = async (developerId, verified, user) => {
         const { Developer } = getModels();
 
         // Only admins can verify developers and super admin
-        if (user.role !== "ADMIN" && user.role !== "SYSADMIN") {
+        if (user.roleName !== "ADMIN" && user.roleName !== "SYSADMIN") {
             return {
                 error: "Unauthorized to verify developers",
                 statusCode: StatusCodes.FORBIDDEN
@@ -325,61 +332,45 @@ exports.verifyDeveloper = async (developerId, verified, user) => {
 };
 
 
-exports.updateDeveloperProfile = async (developerId, payload, user, file) => {
+exports.updateDeveloperProfile = async (developerId, body, file) => {
     try {
-        const validatorError = await developerValidator.updateDeveloperProfile(payload);
-        if (validatorError) {
-            return {
-                error: validatorError,
-                statusCode: StatusCodes.BAD_REQUEST
-            };
-        }
-
         const { User, Developer } = getModels();
 
         const developer = await Developer.findByPk(developerId);
         if (!developer) {
             return {
                 error: "Developer profile not found",
-                statusCode: StatusCodes.NOT_FOUND
+                statusCode: StatusCodes.NOT_FOUND,
             };
         }
 
-        // Check if user owns this profile or is admin/sysadmin
-        if (developer.userId !== user.userId && user.role !== "ADMIN" && user.role !== "SYSADMIN") {
-            return {
-                error: "Unauthorized to update this profile",
-                statusCode: StatusCodes.FORBIDDEN
-            };
-        }
-
-        const updateData = {};
-        const allowedFields = [
-            "companyName", "cacRegNumber", "yearsInBusiness", "projectsCompleted",
-            "websiteUrl", "officeAddress"
-        ];
-
-        allowedFields.forEach(field => {
-            if (payload[field] !== undefined) {
-                updateData[field] = payload[field];
-            }
-        });
-
-        if (file) {
-            if (developer.cloudinary_id) {
-                await cloudinary.uploader.destroy(developer.cloudinary_id);
-            }
-
-            const uploadResult = await cloudinary.uploader.upload(file.path, {
+        let result;
+        if (file && file.path) {
+            result = await cloudinary.uploader.upload(file.path, {
                 folder: "developers/logos",
-                resource_type: "image"
+                resource_type: "image",
             });
-
-            updateData.companyLogoUrl = uploadResult.secure_url;
-            updateData.cloudinary_id = uploadResult.public_id;
         }
 
-        await developer.update(updateData);
+        const update = {
+            companyName: body.companyName?.trim() || developer.companyName,
+            cacRegNumber: body.cacRegNumber?.trim() || developer.cacRegNumber,
+            yearsInBusiness: body.yearsInBusiness
+                ? parseInt(body.yearsInBusiness, 10)
+                : developer.yearsInBusiness,
+            projectsCompleted: body.projectsCompleted
+                ? parseInt(body.projectsCompleted, 10)
+                : developer.projectsCompleted,
+            websiteUrl: body.websiteUrl?.trim() || developer.websiteUrl,
+            officeAddress: body.officeAddress?.trim() || developer.officeAddress,
+            companyLogoUrl: result?.secure_url || developer.companyLogoUrl,
+            cloudinary_id: result?.public_id || developer.cloudinary_id,
+        };
+
+
+        await developer.update({ developerId }, update, {
+            returning: true
+        })
 
         const updatedDeveloper = await Developer.findByPk(developerId, {
             include: [
@@ -392,10 +383,10 @@ exports.updateDeveloperProfile = async (developerId, payload, user, file) => {
                         "lastName",
                         "email",
                         "phoneNumber",
-                        "profilePicture"
-                    ]
-                }
-            ]
+                        "profilePicture",
+                    ],
+                },
+            ],
         });
 
         return {
@@ -409,21 +400,19 @@ exports.updateDeveloperProfile = async (developerId, payload, user, file) => {
                 officeAddress: updatedDeveloper.officeAddress,
                 companyLogoUrl: updatedDeveloper.companyLogoUrl,
                 isVerified: updatedDeveloper.isVerified,
+                cloudinary_id: updatedDeveloper.cloudinary_id,
                 user: updatedDeveloper.user,
-                cloudinary_id: updatedDeveloper.cloudinary_id
             },
-            statusCode: StatusCodes.OK
+            statusCode: StatusCodes.OK,
         };
-
     } catch (e) {
         console.error("An error occurred while updating developer profile:", e);
         return {
             error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
+            statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         };
     }
 };
-
 
 exports.deleteDeveloperProfile = async (developerId, user) => {
     try {

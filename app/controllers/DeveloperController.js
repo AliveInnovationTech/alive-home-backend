@@ -31,7 +31,7 @@ exports.updateDeveloperProfile = async (req, res) => {
         error,
         statusCode,
         data
-    } = await developerService.updateDeveloperProfile(req.params.developerId, req.body, req.user);
+    } = await developerService.updateDeveloperProfile(req.params.developerId, req.file, req.body);
 
     if (error) return response.error(res, error, statusCode);
 

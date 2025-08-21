@@ -48,6 +48,11 @@ exports.createHomeOwnerProfile = async (payload, user) => {
             verificationDocsUrls: payload.verificationDocsUrls || []
         });
 
+        await User.update(
+            { isHomeownerProfileFiled: true },
+            { where: { userId: user.userId } }
+        );
+
         const ownerWithUser = await Owner.findOne({
             where: { ownerId: owner.ownerId },
             include: [
@@ -60,7 +65,8 @@ exports.createHomeOwnerProfile = async (payload, user) => {
                         'lastName',
                         'email',
                         'phoneNumber',
-                        'profilePicture'
+                        'profilePicture',
+                        'isHomeownerProfileFiled'
                     ]
                 }
             ]

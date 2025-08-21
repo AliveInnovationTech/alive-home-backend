@@ -40,7 +40,7 @@ exports.createDeveloperProfile = async (payload) => {
     return null;
 };
 
-exports.updateDeveloperProfile = async (payload) => {
+exports.updateDeveloperProfile = async (body) => {
     const schema = {
         companyName: Joi.string().min(2).max(100),
         cacRegNumber: Joi.string().min(5).max(20),
@@ -51,40 +51,8 @@ exports.updateDeveloperProfile = async (payload) => {
         companyLogoUrl: Joi.string().uri().allow('', null),
         cloudinary_id: Joi.string().allow('', null)
     };
-
-    const error = validate(schema, payload);
-    if (error) return error;
-
-    // If updating company name, check if it already exists
-    if (payload.companyName) {
-        const existingCompany = await Developer.findOne({
-            where: { 
-                companyName: payload.companyName,
-                developerId: { [require('sequelize').Op.ne]: payload.developerId }
-            }
-        });
-
-        if (existingCompany) {
-            return "Company name already exists";
-        }
-    }
-
-    // If updating CAC registration number, check if it already exists
-    if (payload.cacRegNumber) {
-        const existingCac = await Developer.findOne({
-            where: { 
-                cacRegNumber: payload.cacRegNumber,
-                developerId: { [require('sequelize').Op.ne]: payload.developerId }
-            }
-        });
-
-        if (existingCac) {
-            return "CAC registration number already exists";
-        }
-    }
-
-    return null;
-};
+    return validate(schema, body)
+}
 
 exports.verifyDeveloper = async (payload) => {
     const schema = {

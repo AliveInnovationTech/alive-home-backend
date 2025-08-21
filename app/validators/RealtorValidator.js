@@ -45,7 +45,6 @@ exports.updateRealtorProfile = async (payload) => {
         yearsOfExperience: Joi.number().integer().min(0).max(50),
         specialties: Joi.array().items(Joi.string().min(2).max(50)),
         certifications: Joi.array().items(Joi.string().min(2).max(100)),
-        verificationDocsUrls: Joi.array().items(Joi.string().uri())
     };
 
     const error = validate(schema, payload);

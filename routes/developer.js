@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const controller = require("../app/controllers/DeveloperController");
 const { authenticateUser, authorizeRoles } = require("../lib/authMiddleware");
-const upload = require("../app/utils/docUploader")
+const upload = require("../app/utils/upload")
 
 // Create developer profile
 router.post("/",
@@ -31,9 +31,8 @@ router.get("/:developerId",
     controller.getDeveloperProfile);
 
 // Update developer profile
-router.put("/:developerId",
-    authenticateUser,
-    authorizeRoles("DEVELOPER", "ADMIN", "SYSADMIN"),
+router.put("/:developerId", upload.single("companyLogoUrl"),authenticateUser,
+ authorizeRoles("DEVELOPER", "ADMIN", "SYSADMIN"),
     controller.updateDeveloperProfile);
 
 // Delete developer profile
