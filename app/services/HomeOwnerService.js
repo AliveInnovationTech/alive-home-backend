@@ -415,7 +415,7 @@ exports.getMyHomeOwnerProfile = async (userId) => {
 
 exports.uploadVerificationDocuments = async (ownerId, files, user) => {
     try {
-        const { User, Owner } = getModels();
+        const { Owner } = getModels();
         const owner = await Owner.findByPk(ownerId);
         if (!owner) {
             return {
