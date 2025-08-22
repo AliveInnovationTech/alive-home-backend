@@ -76,10 +76,10 @@ const upload = require("../app/utils/upload")
  *       403:
  *         description: Forbidden
  */
-router.post("/create",
+router.post("/create/:userId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN")
-    , upload.array("mediaType"), controller.createProperty);
+    authorizeRoles("ADMIN","REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
+    , upload.array("cloudinaryUrls",5), controller.createProperty);
 
 /**
  * @swagger
@@ -214,7 +214,7 @@ router.get("/", controller.getAllProperties);
  */
 router.get("/owner/:ownerId",
     authenticateUser,
-    authorizeRoles("ADMIN", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
+    authorizeRoles("OWNER", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
 
 /**
  * @swagger
@@ -497,6 +497,14 @@ router.get("/user/:userId",
  */
 router.put("/:propertyId/status",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.updatePropertyStatus);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.updatePropertyStatus);
+
+router.post("/listing/:propertyId/:userId", 
+    authenticateUser,
+    authorizeRoles(["HOMEOWNER", "ADMIN", "SYSADMIN"]),
+    controller.createListing)
+
+
+router.get("/role/listings", controller.getListingsByRole)
 
 module.exports = router;

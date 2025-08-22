@@ -14,7 +14,10 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'lister'
             });
 
-            Listing.hasMany(models.Inquiry, { foreignKey: 'listingId', as: 'inquiries' });
+            Listing.hasMany(models.Inquiry, {
+                foreignKey: 'listingId',
+                as: 'inquiries'
+            });
 
             Listing.hasMany(models.UserBehavior, {
                 foreignKey: 'listingId',

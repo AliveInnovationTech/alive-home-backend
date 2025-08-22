@@ -11,11 +11,11 @@ module.exports = (sequelize, DataTypes) => {
         onDelete: 'CASCADE'
       });
 
-      // Transaction.belongsTo(models.Property, {
-      //   foreignKey: 'propertyId',
-      //   as: 'property',
-      //   onDelete: 'SET NULL'
-      // });
+      Transaction.belongsTo(models.Property, {
+        foreignKey: 'propertyId',
+        as: 'property',
+        onDelete: 'SET NULL'
+      });
 
       // Transaction.belongsTo(models.UserSubscription, {
       //   foreignKey: 'subscriptionId',

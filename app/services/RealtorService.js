@@ -8,12 +8,17 @@ const { Op, Sequelize } = require("sequelize");
 
 // Wait for models to be loaded
 const getModels = () => {
-    if (!sequelize.models.User || !sequelize.models.Realtor) {
+    if (!sequelize.models.User
+        || !sequelize.models.Realtor
+        || !sequelize.models.Transaction
+        || !sequelize.models.Property) {
         throw new Error('Models not loaded yet');
     }
     return {
         User: sequelize.models.User,
-        Realtor: sequelize.models.Realtor
+        Realtor: sequelize.models.Realtor,
+        Transaction: sequelize.models.Transaction,
+        Property: sequelize.models.Property
     };
 };
 
@@ -296,50 +301,52 @@ exports.getAllRealtors = async (page = 1, limit = 10, search = '', specialty = '
 
         const whereClause = {};
 
-        // Specialty filter
-        if (specialty) {
-            whereClause.specialties = { [Op.contains]: [specialty] };
-        }
-
-        // Verification filter
-        if (isVerified !== '') {
-            whereClause.isVerified = isVerified === 'true';
-        }
-
-        // Build include for user
-        const include = [
-            {
-                model: User,
-                as: 'user',
-                attributes: [
-                    'userId',
-                    'firstName',
-                    'lastName',
-                    'email',
-                    'phoneNumber',
-                    'profilePicture'
-                ],
-            }
-        ];
-
-        // Search by user fields or brokerageName
+        // 🔍 Search across user fields + Realtor fields
         if (search) {
             whereClause[Op.or] = [
                 Sequelize.where(Sequelize.col("user.firstName"), { [Op.iLike]: `%${search}%` }),
                 Sequelize.where(Sequelize.col("user.lastName"), { [Op.iLike]: `%${search}%` }),
                 Sequelize.where(Sequelize.col("user.email"), { [Op.iLike]: `%${search}%` }),
-                { brokerageName: { [Op.iLike]: `%${search}%` } }
+                { brokerageName: { [Op.iLike]: `%${search}%` } },
+                { licenseNumber: { [Op.iLike]: `%${search}%` } } // ✅ included
             ];
         }
 
+        // 🎯 Filter by specialty (array contains)
+        if (specialty) {
+            whereClause.specialties = {
+                [Op.contains]: [specialty]
+            };
+        }
+
+        // ✅ Filter by verification status
+        if (isVerified !== '') {
+            whereClause.isVerified = isVerified === 'true';
+        }
+
+        // 📦 Query DB with pagination
         const { rows: realtors, count: totalRealtors } = await Realtor.findAndCountAll({
             where: whereClause,
-            include,
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'userId',
+                        'firstName',
+                        'lastName',
+                        'email',
+                        'phoneNumber',
+                        'profilePicture'
+                    ]
+                }
+            ],
             offset,
             limit: pageSize,
             order: [['createdAt', 'DESC']]
         });
 
+        // 📤 Format response
         const data = realtors.map(realtor => ({
             realtorId: realtor.realtorId,
             licenseNumber: realtor.licenseNumber,
@@ -372,6 +379,7 @@ exports.getAllRealtors = async (page = 1, limit = 10, search = '', specialty = '
     }
 };
 
+
 exports.deleteRealtorProfile = async (realtorId, user) => {
     try {
         const { User, Realtor } = getModels();
@@ -385,7 +393,7 @@ exports.deleteRealtorProfile = async (realtorId, user) => {
         }
 
         // Check if user owns this profile or is admin or is not super admin
-        if (realtor.userId !== user.userId && user.role !== "ADMIN" && user.role !== "SYSADMIN") {
+        if (realtor.userId !== user.userId && user.roleName !== "ADMIN" && user.roleName !== "SYSADMIN") {
             return {
                 error: "Unauthorized to delete this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -415,7 +423,7 @@ exports.verifyRealtor = async (realtorId, verified, user) => {
         const { User, Realtor } = getModels();
 
         // Only admins can verify realtors
-        if (user.role !== 'admin' && user.role !== 'superadmin') {
+        if (user.roleName !== 'ADMIN' && user.roleName !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to verify realtors",
                 statusCode: StatusCodes.FORBIDDEN
@@ -455,7 +463,7 @@ exports.verifyRealtor = async (realtorId, verified, user) => {
 
 exports.uploadVerificationDocuments = async (realtorId, files, user) => {
     try {
-        const {Realtor } = getModels();
+        const { Realtor } = getModels();
 
         const realtor = await Realtor.findByPk(realtorId);
         if (!realtor) {
@@ -466,7 +474,7 @@ exports.uploadVerificationDocuments = async (realtorId, files, user) => {
         }
 
         // Check if user owns this profile or is admin
-        if (realtor.userId !== user.userId && user.role !== 'admin' && user.role !== 'superadmin') {
+        if (realtor.userId !== user.userId && user.roleName !== 'ADMIN' && user.roleName !== 'SYSADMIN') {
             return {
                 error: "Unauthorized to upload documents for this profile",
                 statusCode: StatusCodes.FORBIDDEN
@@ -489,7 +497,10 @@ exports.uploadVerificationDocuments = async (realtorId, files, user) => {
         }
         const updatedUrls = [...(realtor.verificationDocsUrls || []), ...uploadedUrls];
 
-        await realtor.update({ verificationDocsUrls: updatedUrls, cloudinary_id: uploadedUrls });
+        await realtor.update({
+            verificationDocsUrls: updatedUrls,
+            cloudinary_ids: uploadedUrls.map(url => url.public_id)
+        });
 
         return {
             data: {
@@ -509,45 +520,104 @@ exports.uploadVerificationDocuments = async (realtorId, files, user) => {
     }
 };
 
-exports.getRealtorStats = async (realtorId) => {
-    try {
-        const { User, Realtor } = getModels();
+exports.calculateRealtorStats = async(realtorId, user)=> {
+    const { User, Realtor, Transaction, Property } = getModels();
 
-        const realtor = await Realtor.findByPk(realtorId);
-        if (!realtor) {
-            return {
-                error: "Realtor profile not found",
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        // This is a placeholder for realtor statistics
-        // In a real implementation, you would calculate actual stats from transactions
-        const mockStats = {
-            totalPropertiesSold: 25,
-            totalSalesValue: 15000000,
-            averageDaysOnMarket: 45,
-            clientSatisfactionScore: 4.8,
-            currentListings: 8,
-            monthlyCommission: 250000
-        };
-
-        return {
-            data: {
-                realtorId: realtor.realtorId,
-                licenseNumber: realtor.licenseNumber,
-                brokerageName: realtor.brokerageName,
-                yearsOfExperience: realtor.yearsOfExperience,
-                stats: mockStats
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        console.error("An error occurred while retrieving realtor stats:", e);
-        return {
-            error: e.message,
-            statusCode: StatusCodes.INTERNAL_SERVER_ERROR
-        };
+    const realtor = await Realtor.findByPk(realtorId);
+    if (!realtor) {
+        return { error: "Realtor profile not found", statusCode: StatusCodes.NOT_FOUND };
     }
-};
+
+    // --- Step 1: Get all properties for this realtor ---
+    const properties = await Property.findAll({ where: { realtorId } });
+    const propertyIds = properties.map(p => p.id);
+
+    // --- Step 2: Get all transactions for those properties ---
+    let transactions = [];
+    if (propertyIds.length > 0) {
+        transactions = await Transaction.findAll({
+            where: { propertyId: propertyIds }
+        });
+    }
+
+    // --- Step 3: Calculate stats ---
+    const totalPropertiesSold = transactions.length;
+    const totalSalesValue = transactions.reduce((sum, t) => sum + (t.salePrice || 0), 0);
+
+    const averageDaysOnMarket =
+        totalPropertiesSold > 0
+            ? transactions.reduce((sum, t) => {
+                const daysOnMarket = Math.max(
+                    0,
+                    (new Date(t.soldAt) - new Date(t.listedAt)) / (1000 * 60 * 60 * 24)
+                );
+                return sum + daysOnMarket;
+            }, 0) / totalPropertiesSold
+            : 0;
+
+    const clientReviews = await User.findAll({
+        where: { reviewedRealtorId: realtorId },
+        attributes: ["rating"]
+    });
+    const clientSatisfactionScore = clientReviews.length > 0
+        ? clientReviews.reduce((sum, r) => sum + r.rating, 0) / clientReviews.length
+        : null;
+
+    const currentListings = await Property.count({
+        where: { realtorId, status: "active" }
+    });
+
+    const monthlyCommission = transactions.reduce((sum, t) => {
+        const saleDate = new Date(t.soldAt);
+        const now = new Date();
+        if (
+            saleDate.getMonth() === now.getMonth() &&
+            saleDate.getFullYear() === now.getFullYear()
+        ) {
+            sum += (t.commission || 0);
+        }
+        return sum;
+    }, 0);
+
+    const fullStats = {
+        totalPropertiesSold,
+        totalSalesValue,
+        averageDaysOnMarket: Math.round(averageDaysOnMarket),
+        clientSatisfactionScore,
+        currentListings,
+        monthlyCommission
+    };
+
+    // --- Step 4: Role-based filtering ---
+    let stats;
+    if (user.roleName === "SYSADMIN") {
+        stats = fullStats;
+    } else if (user.roleName === "ADMIN") {
+        stats = fullStats;
+    } else if (user.roleName === "REALTOR") {
+        if (user.realtorId !== realtorId) {
+            return { error: "Unauthorized", statusCode: StatusCodes.FORBIDDEN };
+        }
+        stats = fullStats;
+    } else if (user.roleName === "BUYER") {
+        stats = {
+            totalPropertiesSold: fullStats.totalPropertiesSold,
+            averageDaysOnMarket: fullStats.averageDaysOnMarket,
+            clientSatisfactionScore: fullStats.clientSatisfactionScore,
+            currentListings: fullStats.currentListings
+        };
+    } else {
+        return { error: "Unauthorized role", statusCode: StatusCodes.FORBIDDEN };
+    }
+
+    return {
+        data: {
+            realtorId: realtor.realtorId,
+            licenseNumber: realtor.licenseNumber,
+            brokerageName: realtor.brokerageName,
+            yearsOfExperience: realtor.yearsOfExperience,
+            stats
+        },
+        statusCode: StatusCodes.OK
+    };
+}

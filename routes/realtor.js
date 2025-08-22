@@ -56,7 +56,7 @@ router.post("/:realtorId/documents",
 // Get realtor statistics
 router.get("/:realtorId/stats",
     authenticateUser,
-    authorizeRoles("ADMIN", "SYSADMIN"),
+    authorizeRoles("BUYER","REALTOR","ADMIN", "SYSADMIN"),
     controller.getRealtorStats);
 
 module.exports = router;

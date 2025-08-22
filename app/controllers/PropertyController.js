@@ -9,12 +9,46 @@ exports.createProperty = async (req, res) => {
         error,
         data,
         statusCode
-    } = await propertyService.createProperty(req.body, req.user, req.files);
+    } = await propertyService.createProperty(
+        req.body,
+        req.files,
+        req.params.userId
+    );
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
 };
+
+
+exports.createListing = async (req, res) => {
+    const {
+        error,
+        data,
+        statusCode
+    } = await propertyService.createListing(req.body, req.params.propertyId, req.params.userId)
+
+    if (error) return response.error(res, error, statusCode);
+
+    return response.success(res, data, statusCode)
+}
+
+exports.getListingsByRole = async (req, res) => {
+    const {
+        error,
+        statusCode,
+        data
+
+    } = await propertyService.getListingsByRole(
+        req.query.role,
+        req.query.page,
+        req.query.limit
+    )
+    if (error) return response.error(res, error, statusCode);
+
+    return response.success(res, data, statusCode)
+}
+
 
 exports.getProperty = async (req, res) => {
     const {

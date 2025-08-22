@@ -109,7 +109,7 @@ exports.getRealtorStats = async (req, res) => {
         error,
         statusCode,
         data
-    } = await realtorService.getRealtorStats(req.params.realtorId);
+    } = await realtorService.calculateRealtorStats(req.params.realtorId, req.user);
 
     if (error) return response.error(res, error, statusCode);
 

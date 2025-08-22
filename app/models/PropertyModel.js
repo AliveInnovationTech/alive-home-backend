@@ -18,11 +18,16 @@ module.exports = (sequelize, DataTypes) => {
                 as: 'media',
                 onDelete: 'CASCADE'
             });
+            
 
             Property.hasMany(models.Inquiry, {
                 foreignKey: 'propertyId',
                 as: 'inquiries'
             });
+            Property.hasMany(models.Transaction,{
+                    foreignKey: "propertyId",
+                    as: "transactions"
+                });
         }
         getCoordinates() {
             return {
@@ -226,10 +231,10 @@ module.exports = (sequelize, DataTypes) => {
             hooks: {
                 beforeValidate: (property) => {
                     if (property.latitude) {
-                        property.latitude = parseFloat(property.latitude.toFixed(6));
+                        property.latitude = parseFloat(property.latitude);
                     }
                     if (property.longitude) {
-                        property.longitude = parseFloat(property.longitude.toFixed(6));
+                        property.longitude = parseFloat(property.longitude);
                     }
                 }
             }

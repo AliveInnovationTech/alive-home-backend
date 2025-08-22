@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
                 foreignKey: 'uploadedBy',
                 as: 'uploader'
             });
-            
+
         }
     }
 
@@ -75,11 +75,6 @@ module.exports = (sequelize, DataTypes) => {
             originalName: {
                 type: DataTypes.STRING,
                 allowNull: false,
-                validate: {
-                    notEmpty: {
-                        msg: 'Original file name is required'
-                    }
-                }
             },
             cloudinaryId: {
                 type: DataTypes.STRING,
