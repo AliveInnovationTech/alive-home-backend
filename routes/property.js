@@ -109,6 +109,60 @@ router.post("/create/:userId",
  *       404:
  *         description: Property not found
  */
+/**
+ * @swagger
+ * /api/v1/properties/search:
+ *   get:
+ *     summary: Search properties
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *       - in: query
+ *         name: propertyType
+ *         schema:
+ *           type: string
+ *         description: Property type filter
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *         description: Location filter
+ *       - in: query
+ *         name: bedrooms
+ *         schema:
+ *           type: number
+ *         description: Number of bedrooms
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Property'
+ */
+router.get("/search", controller.searchProperties);
+
 router.get("/:propertyId", controller.getProperty);
 
 /**
@@ -214,7 +268,7 @@ router.get("/", controller.getAllProperties);
  */
 router.get("/owner/:ownerId",
     authenticateUser,
-    authorizeRoles("OWNER", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
+    authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
 
 /**
  * @swagger
@@ -284,7 +338,7 @@ router.get("/owner/:ownerId",
  */
 router.put("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN")
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN")
     , upload.array("mediaType"), controller.updateProperty);
 
 /**
@@ -314,61 +368,7 @@ router.put("/:propertyId",
  */
 router.delete("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.deleteProperty);
-
-/**
- * @swagger
- * /api/v1/properties/search:
- *   get:
- *     summary: Search properties
- *     tags: [Properties]
- *     parameters:
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *         description: Search query
- *       - in: query
- *         name: propertyType
- *         schema:
- *           type: string
- *         description: Property type filter
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum price
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum price
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- *         description: Location filter
- *       - in: query
- *         name: bedrooms
- *         schema:
- *           type: number
- *         description: Number of bedrooms
- *     responses:
- *       200:
- *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Property'
- */
-router.get("/search", controller.searchProperties);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.deleteProperty);
 
 /**
  * @swagger
@@ -404,7 +404,7 @@ router.get("/search", controller.searchProperties);
  */
 router.get("/properties/analytics",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.getPropertyStats);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.getPropertyStats);
 
 /**
  * @swagger
@@ -442,7 +442,7 @@ router.get("/properties/analytics",
  */
 router.get("/user/:userId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.getPropertiesByUser);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.getPropertiesByUser);
 
 /**
  * @swagger
@@ -501,7 +501,7 @@ router.put("/:propertyId/status",
 
 router.post("/listing/:propertyId/:userId", 
     authenticateUser,
-    authorizeRoles(["HOMEOWNER", "ADMIN", "SYSADMIN"]),
+    authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"),
     controller.createListing)
 
 

@@ -71,7 +71,7 @@ exports.getAllProperties = async (req, res) => {
 
     if (error) return response.error(res, error, statusCode);
 
-    return response.paginate(res, data, statusCode);
+    return response.success(res, data, statusCode);
 };
 
 exports.getPropertiesByOwner = async (req, res) => {
@@ -118,11 +118,11 @@ exports.searchProperties = async (req, res) => {
         error,
         statusCode,
         data
-    } = await propertyService.searchProperties(req.query, req.searchTerm);
+    } = await propertyService.searchProperties(req.query.q, req.query);
 
     if (error) return response.error(res, error, statusCode);
 
-    return response.paginate(res, data, statusCode);
+    return response.success(res, data, statusCode);
 };
 
 exports.getPropertyStats = async (req, res) => {

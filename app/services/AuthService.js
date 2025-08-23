@@ -69,9 +69,8 @@ exports.login = async (body) => {
         }
 
         const token = jwt.sign({ userId: user.userId },
-            process.env.SECURITY_TOKEN,
-            { expiresIn: "1h" },
-            { algorithm: "HS256" }
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
         );
 
         logInfo('User login successful', { userId: user.userId, email: user.email });
