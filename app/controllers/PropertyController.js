@@ -5,28 +5,26 @@ const propertyService = require("../services/PropertyService");
 
 
 exports.createProperty = async (req, res) => {
-    const {
-        error,
-        data,
-        statusCode
-    } = await propertyService.createProperty(
+
+    const result = await propertyService.createProperty(
         req.body,
         req.files,
-        req.params.userId
+        req.user,
     );
 
-    if (error) return response.error(res, error, statusCode);
+    if (result.error) {
+        return response.error(res, result.error, result.statusCode);
+    }
 
-    return response.success(res, data, statusCode);
+    return response.success(res, result.data, result.statusCode);
 };
-
 
 exports.createListing = async (req, res) => {
     const {
         error,
         data,
         statusCode
-    } = await propertyService.createListing(req.body, req.params.propertyId, req.params.userId)
+    } = await propertyService.createListing(req.body, req.params.propertyId, req.user)
 
     if (error) return response.error(res, error, statusCode);
 
@@ -71,7 +69,7 @@ exports.getAllProperties = async (req, res) => {
 
     if (error) return response.error(res, error, statusCode);
 
-    return response.paginate(res, data, statusCode);
+    return response.success(res, data, statusCode);
 };
 
 exports.getPropertiesByOwner = async (req, res) => {
@@ -79,7 +77,7 @@ exports.getPropertiesByOwner = async (req, res) => {
         error,
         data,
         statusCode
-    } = await propertyService.getPropertiesByOwner(req.params.ownerId, req.query);
+    } = await propertyService.getPropertiesByOwner(req.params.ownerId, req.user, req.query);
 
     if (error) return response.error(res, error, statusCode);
 
@@ -118,11 +116,11 @@ exports.searchProperties = async (req, res) => {
         error,
         statusCode,
         data
-    } = await propertyService.searchProperties(req.query, req.searchTerm);
+    } = await propertyService.searchProperties(req.query.q, req.query);
 
     if (error) return response.error(res, error, statusCode);
 
-    return response.paginate(res, data, statusCode);
+    return response.success(res, data, statusCode);
 };
 
 exports.getPropertyStats = async (req, res) => {
@@ -142,7 +140,7 @@ exports.getPropertiesByUser = async (req, res) => {
         error,
         data,
         statusCode
-    } = await propertyService.getPropertiesByUser(req.params.userId, req.query);
+    } = await propertyService.getPropertiesByUser(req.params.userId, req.user, req.query);
 
     if (error) return response.error(res, error, statusCode);
 

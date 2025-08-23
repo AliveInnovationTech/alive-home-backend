@@ -76,10 +76,10 @@ const upload = require("../app/utils/upload")
  *       403:
  *         description: Forbidden
  */
-router.post("/create/:userId",
+router.post("/create",
     authenticateUser,
-    authorizeRoles("ADMIN","REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
-    , upload.array("cloudinaryUrls",5), controller.createProperty);
+    authorizeRoles("ADMIN", "REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
+    , upload.array("title", 5), controller.createProperty);
 
 /**
  * @swagger
@@ -109,6 +109,60 @@ router.post("/create/:userId",
  *       404:
  *         description: Property not found
  */
+/**
+ * @swagger
+ * /api/v1/properties/search:
+ *   get:
+ *     summary: Search properties
+ *     tags: [Properties]
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *       - in: query
+ *         name: propertyType
+ *         schema:
+ *           type: string
+ *         description: Property type filter
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *         description: Minimum price
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *         description: Location filter
+ *       - in: query
+ *         name: bedrooms
+ *         schema:
+ *           type: number
+ *         description: Number of bedrooms
+ *     responses:
+ *       200:
+ *         description: Search results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Property'
+ */
+router.get("/search", controller.searchProperties);
+
 router.get("/:propertyId", controller.getProperty);
 
 /**
@@ -214,7 +268,8 @@ router.get("/", controller.getAllProperties);
  */
 router.get("/owner/:ownerId",
     authenticateUser,
-    authorizeRoles("OWNER", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
+    authorizeRoles("HOMEOWNER",
+        "ADMIN", "SYSADMIN", "REALTOR", "DEVELOPER"), controller.getPropertiesByOwner);
 
 /**
  * @swagger
@@ -284,7 +339,7 @@ router.get("/owner/:ownerId",
  */
 router.put("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN")
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER")
     , upload.array("mediaType"), controller.updateProperty);
 
 /**
@@ -314,61 +369,7 @@ router.put("/:propertyId",
  */
 router.delete("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.deleteProperty);
-
-/**
- * @swagger
- * /api/v1/properties/search:
- *   get:
- *     summary: Search properties
- *     tags: [Properties]
- *     parameters:
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *         description: Search query
- *       - in: query
- *         name: propertyType
- *         schema:
- *           type: string
- *         description: Property type filter
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum price
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum price
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- *         description: Location filter
- *       - in: query
- *         name: bedrooms
- *         schema:
- *           type: number
- *         description: Number of bedrooms
- *     responses:
- *       200:
- *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Property'
- */
-router.get("/search", controller.searchProperties);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER"), controller.deleteProperty);
 
 /**
  * @swagger
@@ -402,9 +403,12 @@ router.get("/search", controller.searchProperties);
  *       403:
  *         description: Forbidden
  */
-router.get("/properties/analytics",
+router.get("/analytics",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.getPropertyStats);
+    authorizeRoles("ADMIN",
+        "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"),
+    controller.getPropertyStats);
 
 /**
  * @swagger
@@ -442,7 +446,8 @@ router.get("/properties/analytics",
  */
 router.get("/user/:userId",
     authenticateUser,
-    authorizeRoles("ADMIN", "OWNER", "SYSADMIN"), controller.getPropertiesByUser);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"), controller.getPropertiesByUser);
 
 /**
  * @swagger
@@ -497,14 +502,15 @@ router.get("/user/:userId",
  */
 router.put("/:propertyId/status",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.updatePropertyStatus);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"), controller.updatePropertyStatus);
 
-router.post("/listing/:propertyId/:userId", 
-    authenticateUser,
-    authorizeRoles(["HOMEOWNER", "ADMIN", "SYSADMIN"]),
-    controller.createListing)
+// router.post("/listing/:propertyId/:userId", 
+//     authenticateUser,
+//     authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"),
+//     controller.createListing)
 
 
-router.get("/role/listings", controller.getListingsByRole)
+// router.get("/role/listings", controller.getListingsByRole)
 
 module.exports = router;

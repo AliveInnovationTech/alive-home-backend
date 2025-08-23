@@ -86,11 +86,11 @@ exports.login = async (body) => {
                         roleId: user.role.roleId,
                         name: user.role.name
                     } : null,
-                    profilePictureUrl: user.profilePictureUrl,
-                    isBuyerProfileFiled:user.isBuyerProfileFiled,
-                    isDeveloperProfileFiled:user.isDeveloperProfileFiled,
-                    isRealtorProfileFiled:user.isRealtorProfileFiled,
-                    isHomeownerProfileFiled:user.isHomeownerProfileFiled
+                    profilePicture: user.profilePicture,
+                    isBuyerProfileFiled: user.isBuyerProfileFiled,
+                    isDeveloperProfileFiled: user.isDeveloperProfileFiled,
+                    isRealtorProfileFiled: user.isRealtorProfileFiled,
+                    isHomeownerProfileFiled: user.isHomeownerProfileFiled
 
                 },
                 token
@@ -128,7 +128,7 @@ exports.me = async (userId) => {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     role: user.role?.name || null,
-                    profilePictureUrl: user.profilePictureUrl
+                    profilePicture: user.profilePicture
                 }
             },
             statusCode: StatusCodes.OK
