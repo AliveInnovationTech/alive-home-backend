@@ -12,8 +12,8 @@ const MODEL = process.env.MODEL || 'gemini-2.0-flash'
 const GEMINI_MAX_TOKENS = parseInt(process.env.GEMINI_MAX_TOKENS) || 10000
 const GEMINI_TEMPERATURE = parseFloat(process.env.GEMINI_TEMPERATURE) || 2;
 
-// Initialize OpenAI client
-const gemini = new GoogleGenAI({ apiKey:GEMINI_API_KEY });
+// Initialize Gemini AI client
+const gemini = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371;
@@ -179,7 +179,7 @@ User Preferences:
 
 Available Properties (${availableProperties.length} properties):
 ${availableProperties.map(prop =>
-        `- ${prop.title} (${prop.propertyType}): ${prop.bedrooms} bed, ${prop.bathrooms} bath, $${Number(prop.price).toLocaleString('en-US')}, ${prop.city}, ${prop.state}`
+        `- Property ID: ${prop.propertyId} | ${prop.title} (${prop.propertyType}): ${prop.bedrooms} bed, ${prop.bathrooms} bath, $${Number(prop.price).toLocaleString('en-US')}, ${prop.city}, ${prop.state}`
     ).join('\n')}
 
 User Location: ${userLocation ? `${userLocation.latitude}, ${userLocation.longitude}` : 'Not available'}
@@ -187,7 +187,7 @@ User Location: ${userLocation ? `${userLocation.latitude}, ${userLocation.longit
 Please provide:
 1. Top 5 most relevant property recommendations with specific reasons why each property matches the user's preferences
 2. For each recommendation, include:
-   - Property ID
+   - Property ID (IMPORTANT: Use the exact Property ID from the list above - the UUID format like 'abc12345-1234-5678-9012-123456789abc')
    - Relevance score (0-100)
    - Specific reasons for recommendation
    - Recommendation type (SIMILAR_PROPERTY, LOCATION_BASED, PREFERENCE_MATCH, MARKET_INSIGHT)
@@ -196,7 +196,7 @@ Please provide:
 Return only valid JSON array with the following structure:
 [
   {
-    "propertyId": "uuid",
+    "propertyId": "ef1f37fe-f22c-4d99-8881-2c1a71338e71",
     "relevanceScore": 85,
     "recommendationReason": "This property matches your preference for 3-bedroom homes in Austin and is within your price range",
     "recommendationType": "PREFERENCE_MATCH",
@@ -207,10 +207,10 @@ Return only valid JSON array with the following structure:
     return prompt;
 };
 
-// Process OpenAI response with improved JSON parsing
-const processGeminiAIResponse = (response) => {
+// Process Gemini response with improved JSON parsing
+const processGeminiAIResponse = (result) => {
     try {
-        const content = response.choices[0].message.content;
+        const content = result.text;
 
         // Extract JSON between first `[` and matching `]`
         let jsonStart = content.indexOf('[');
@@ -280,7 +280,7 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
 
         const availableProperties = await Property.findAll({
             where: {
-                isActive: true,
+                status: 'AVAILABLE',
                 propertyId: { [Op.ne]: null }
             },
             include: [
@@ -396,26 +396,22 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
                 statusCode: StatusCodes.OK
             };
         }
-//completions
-        const geminiAIResponse = await gemini.chats.create({
-            model:MODEL,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are an expert real estate AI assistant that provides personalized property recommendations based on user preferences and available properties. Return only valid JSON array."
-                },
-                {
-                    role: "user",
-                    content: prompt
-                }
-            ],
-            max_tokens: GEMINI_MAX_TOKENS,
-            temperature: GEMINI_TEMPERATURE,
-            response_format: { type: 'json_object' }
+// Call Gemini AI API
+        const fullPrompt = `You are an expert real estate AI assistant that provides personalized property recommendations based on user preferences and available properties. Return only valid JSON array.
+
+${prompt}`;
+
+        const result = await gemini.models.generateContent({
+            model: MODEL,
+            contents: fullPrompt,
+            generationConfig: {
+                temperature: GEMINI_TEMPERATURE,
+                maxOutputTokens: GEMINI_MAX_TOKENS,
+            },
         });
 
-        // Process OpenAI response
-        const aiRecommendations = processGeminiAIResponse(geminiAIResponse);
+        // Process Gemini response
+        const aiRecommendations = processGeminiAIResponse(result);
 
         if (aiRecommendations.length === 0) {
             return {
@@ -510,14 +506,14 @@ exports.generatePersonalizedRecommendations = async (userId, userLocation = null
     } catch (error) {
         logger.error("Error generating personalized recommendations:", error);
 
-        if (error.status === 401) {
+        if (error.message && error.message.includes('API key')) {
             return {
                 error: "GeminiAI API authentication failed",
                 statusCode: StatusCodes.UNAUTHORIZED
             };
-        } else if (error.status === 429) {
+        } else if (error.message && error.message.includes('quota')) {
             return {
-                error: "GeminiAI API rate limit exceeded",
+                error: "GeminiAI API quota exceeded",
                 statusCode: StatusCodes.TOO_MANY_REQUESTS
             };
         }

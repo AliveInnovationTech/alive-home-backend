@@ -37,8 +37,8 @@ exports.updateRecommendationStatus = async (req, res) => {
         statusCode,
         data
     } = await AIRecommendationService.
-        updateRecommendationStatus(req.params.userId,
-            req.params.recommendationId, req.body);
+        updateRecommendationStatus(req.params.recommendationId,
+            req.params.userId, req.body.status);
 
     if (error) return response.error(res, error, statusCode);
 
