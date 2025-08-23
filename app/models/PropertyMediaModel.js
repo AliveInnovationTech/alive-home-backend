@@ -97,7 +97,7 @@ module.exports = (sequelize, DataTypes) => {
                     }
                 }
             },
-            title: {
+            ImageTitle: {
                 type: DataTypes.STRING,
                 validate: {
                     len: {
