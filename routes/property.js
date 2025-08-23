@@ -79,7 +79,7 @@ const upload = require("../app/utils/upload")
 router.post("/create",
     authenticateUser,
     authorizeRoles("ADMIN", "REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
-    , upload.array("title", 5), controller.createProperty);
+    , upload.array("ImageTitle", 5), controller.createProperty);
 
 /**
  * @swagger
