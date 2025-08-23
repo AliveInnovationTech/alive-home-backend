@@ -14,6 +14,7 @@ module.exports = (app) => {
     app.use("/api/v1/payments", require("./payment"));
     app.use("/api/v1/properties", require("./property"));
     app.use("/api/v1/ai-recommendations", require("./ai.recommendation"));
+    app.use("/api/v1/listings", require("./listProperty"));
 
 
 };

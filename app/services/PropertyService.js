@@ -21,33 +21,135 @@ const getModels = () => {
     };
 };
 
-exports.createProperty = async (body, files, userId, userRole) => {
+exports.createProperty = async (body, files, user, userRole) => {
     try {
-        if (!body.title || !body.description || !body.address || !body.city || !body.state) {
+        const { Property, PropertyMedia, Listing, User } = getModels();
+        const requiredFields = [
+            "title",
+            "address",
+            "city",
+            "state",
+            "zipCode",
+            "propertyType",
+            "bedrooms",
+            "bathrooms",
+            "latitude",
+            "longitude",
+            "price"
+        ];
+
+        const missingFields = requiredFields.filter(f => !body[f] && body[f] !== 0);
+        if (missingFields.length > 0) {
             return {
-                error: "Missing required fields: title, description, address, city, state",
+                error: `Missing required fields: ${missingFields.join(", ")}`,
                 statusCode: StatusCodes.BAD_REQUEST
             };
         }
 
-        // const validRoles = ["DEVELOPER", "HOMEOWNER", "REALTOR"];
-        // if (!validRoles.includes(userRole)) {
-        //     return {
-        //         error: "Invalid user role. Must be DEVELOPER, HOMEOWNER, or REALTOR",
-        //         statusCode: StatusCodes.BAD_REQUEST
-        //     };
-        // }
+        const validPropertyTypes = [
+            "SINGLE_FAMILY",
+            "MULTI_FAMILY",
+            "CONDO",
+            "APARTMENT",
+            "COMMERCIAL",
+            "LAND",
+            "VILLA",
+            "TOWNHOUSE"
+        ];
+        if (!validPropertyTypes.includes(body.propertyType)) {
+            return {
+                error: `Invalid propertyType. Must be one of: ${validPropertyTypes.join(", ")}`,
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
 
-        const { Property, PropertyMedia, User, Listing } = getModels();
+        const ownerExists = await User.findByPk(user.userId);
+        if (!ownerExists) {
+            return {
+                error: "User not found. Cannot create property for non-existent owner.",
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+
+        const validStatuses = [
+            "active",
+            "pending",
+            "draft",
+            "sold",
+            "unavailable",
+            "AVAILABLE",
+            "SOLD",
+            "PENDING",
+            "DRAFT"
+        ];
+        let status = body.status || "AVAILABLE";
+        if (!validStatuses.includes(status)) {
+            status = "AVAILABLE";
+        }
+        const numericFields = {
+            bedrooms: { value: body.bedrooms, min: 0 },
+            bathrooms: { value: body.bathrooms, min: 0.5 },
+            squareFeet: { value: body.squareFeet, min: 0, optional: true },
+            yearBuilt: { value: body.yearBuilt, min: 1800, optional: true },
+            lotSize: { value: body.lotSize, min: 0, optional: true },
+            price: { value: body.price, min: 0 }
+        };
+
+        for (const [field, config] of Object.entries(numericFields)) {
+            if (config.value === undefined || config.value === null) {
+                if (!config.optional) {
+                    return {
+                        error: `${field} is required`,
+                        statusCode: StatusCodes.BAD_REQUEST
+                    };
+                }
+                continue;
+            }
+
+            const numericValue = parseFloat(String(config.value).replace(/[^0-9.]/g, ''));
+
+            if (isNaN(numericValue)) {
+                return {
+                    error: `${field} must be a valid number`,
+                    statusCode: StatusCodes.BAD_REQUEST
+                };
+            }
+
+            if (numericValue < config.min) {
+                return {
+                    error: `${field} must be at least ${config.min}`,
+                    statusCode: StatusCodes.BAD_REQUEST
+                };
+            }
+
+            body[field] = numericValue;
+        }
+
+        const latitude = parseFloat(body.latitude);
+        const longitude = parseFloat(body.longitude);
+
+        if (isNaN(latitude) || latitude < -90 || latitude > 90) {
+            return {
+                error: 'Latitude must be a valid number between -90 and 90',
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+
+        if (isNaN(longitude) || longitude < -180 || longitude > 180) {
+            return {
+                error: 'Longitude must be a valid number between -180 and 180',
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
 
         const property = await Property.create({
-            ownerId: userId,
+            ownerId: user.userId,
             title: body.title,
             description: body.description,
             address: body.address,
             city: body.city,
             state: body.state,
-            country: body.country || 'NG',
+            country: body.country || "NG",
             zipCode: body.zipCode,
             propertyType: body.propertyType,
             bedrooms: body.bedrooms,
@@ -58,11 +160,10 @@ exports.createProperty = async (body, files, userId, userRole) => {
             latitude: body.latitude,
             longitude: body.longitude,
             price: body.price,
-            status: body.status || 'AVAILABLE',
+            status,
             features: body.features || []
         });
 
-        let cloudinaryUrl = [];
         let mediaUrls = [];
 
         if (files && files.length > 0) {
@@ -79,17 +180,22 @@ exports.createProperty = async (body, files, userId, userRole) => {
                     await PropertyMedia.create({
                         propertyId: property.propertyId,
                         cloudinaryUrl: result.secure_url,
-                        mediaType: 'IMAGE',
+                        mediaType: "IMAGE",
                         cloudinaryId: result.public_id,
                         isMainImage: mediaUrls.length === 0,
-                        fileName: "House",
-                        originalName: "house"
-
+                        fileName: file.originalname || "House",
+                        originalName: file.originalname || "house",
+                        fileSize: file.size,
+                        mimeType: file.mimetype,
+                        uploadedBy: user.userId
                     });
 
                     mediaUrls.push(result.secure_url);
                 } catch (uploadError) {
-                    logger.error("Error uploading media", { error: uploadError.message, propertyId: property.propertyId });
+                    logger.error("Error uploading media", {
+                        error: uploadError.message,
+                        propertyId: property.propertyId
+                    });
                 }
             }
         }
@@ -97,100 +203,62 @@ exports.createProperty = async (body, files, userId, userRole) => {
         if (body.createListing !== false) {
             await Listing.create({
                 propertyId: property.propertyId,
-                listedBy: userId,
+                listedBy: user.userId,
                 listerRole: userRole,
                 listingPrice: body.price,
                 originalPrice: body.price,
                 marketingDescription: body.marketingDescription || body.description,
-                listingStatus: 'ACTIVE'
+                listingStatus: "ACTIVE"
             });
         }
 
-        // For now, let's return the basic property to avoid association issues
         const propertyWithDetails = await Property.findByPk(property.propertyId);
 
-        logInfo('Property created successfully', {
+        logInfo("Property created successfully", {
             propertyId: property.propertyId,
-            ownerId: userId,
+            ownerId: user.userId,
             userRole: userRole,
-            mediaCount: cloudinaryUrl.length
+            mediaCount: mediaUrls.length
         });
 
         return {
             data: {
                 property: propertyWithDetails,
-                mediaCount: cloudinaryUrl.length,
-                userRole: userRole
+                mediaCount: mediaUrls.length,
+                userRole
             },
             statusCode: StatusCodes.CREATED
         };
 
     } catch (e) {
-        return handleServiceError('PropertyService', 'createProperty', e, 'Error creating property');
-    }
-};
+        console.error("🔥 Sequelize Error Details:", e.name, e.message, e.errors);
 
-exports.createListing = async (propertyId, body, userId, userRole) => {
-    try {
-        const { Property, Listing, User } = getModels();
-
-        const property = await Property.findByPk(propertyId);
-        if (!property) {
+        if (e.name === 'SequelizeForeignKeyConstraintError') {
             return {
-                error: "Property not found",
-                statusCode: StatusCodes.NOT_FOUND
+                error: "Invalid user reference. The specified owner does not exist.",
+                statusCode: StatusCodes.BAD_REQUEST
             };
         }
 
-        const listing = await Listing.create({
-            propertyId: propertyId,
-            listedBy: userId,
-            listerRole: userRole,
-            listingPrice: body.listingPrice,
-            originalPrice: body.originalPrice || body.listingPrice,
-            marketingDescription: body.marketingDescription,
-            listingStatus: body.listingStatus || 'ACTIVE',
-            virtualTourUrl: body.virtualTourUrl || null,
-            isOpenHouse: body.isOpenHouse || false,
-            openHouseSchedule: body.openHouseSchedule || []
-        });
+        if (e.name === 'SequelizeValidationError') {
+            const validationErrors = e.errors.map(err => ({
+                field: err.path,
+                message: err.message
+            }));
+            return {
+                error: "Validation failed",
+                details: validationErrors,
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
 
-        const listingWithDetails = await Listing.findByPk(listing.listingId, {
-            include: [
-                {
-                    model: Property,
-                    as: 'property',
-                    include: [{
-                        model: User,
-                        as: 'owner',
-                        attributes: ['userId', 'firstName', 'lastName']
-                    }]
-                },
-                {
-                    model: User,
-                    as: 'lister',
-                    attributes: ['userId', 'firstName', 'lastName', 'role']
-                }
-            ]
-        });
-
-        return {
-            data: listingWithDetails,
-            statusCode: StatusCodes.CREATED
-        };
-
-    } catch (e) {
-        return handleServiceError(
-            'PropertyService',
-            'createListing',
-            e,
-            'Error creating listing');
+        return handleServiceError("PropertyService", "createProperty", e, "Error creating property");
     }
 };
 
-exports.getPropertyById = async (propertyId, includeAssociations = true) => {
+exports.getPropertyById = async (propertyId) => {
 
-    const { Listing, Property, PropertyMedia, User } = getModels();
+    const { Property } = getModels();
     try {
         const includeOptions = [];
 
@@ -243,9 +311,76 @@ exports.getPropertyById = async (propertyId, includeAssociations = true) => {
 };
 
 
+exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
+    try {
+        const pageNumber = parseInt(page) || 1;
+        const pageSize = parseInt(limit) || 10;
+        const offset = (pageNumber - 1) * pageSize;
+
+        const { Property, PropertyMedia, User, Listing } = getModels();
+
+        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
+            where: { ownerId: userId },
+            include: [
+                {
+                    model: User,
+                    as: 'owner',
+                    attributes: ['userId', 'firstName', 'lastName', 'email', 'role']
+                },
+                {
+                    model: PropertyMedia,
+                    as: 'media',
+                    attributes: ['mediaId', 'cloudinaryUrl', 'mediaType', 'isMainImage']
+                },
+                {
+                    model: Listing,
+                    as: 'listings',
+                    attributes: [
+                        'listingId',
+                        'listingStatus',
+                        'listingPrice',
+                        'listedBy'
+                    ]
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit: pageSize
+        });
+
+        if (!properties.length) {
+            return {
+                error: 'No properties found for this user',
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        return {
+            data: {
+                properties,
+                pagination: {
+                    currentPage: pageNumber,
+                    pageSize,
+                    totalProperties,
+                    totalPages: Math.ceil(totalProperties / pageSize)
+                }
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError(
+            'PropertyService',
+            'getPropertiesByUser',
+            e,
+            'Error fetching properties by user');
+    }
+};
+
+
 exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
     try {
-        const { Property, PropertyMedia, User, Listing } = getModels();
+        const { Property } = getModels();
 
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
@@ -320,6 +455,195 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
     }
 };
 
+exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
+    try {
+        const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+        const pageSize = Math.max(parseInt(limit, 10) || 10, 1);
+        const offset = (pageNumber - 1) * pageSize;
+
+        const { Listing, Property, PropertyMedia, User } = getModels();
+
+        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
+            where: { ownerId },
+            include: [
+                {
+                    model: PropertyMedia,
+                    as: 'media',
+                    where: { isMainImage: true },
+                    required: false,
+                    attributes: ['cloudinaryUrl']
+                },
+                {
+                    model: Listing,
+                    as: 'listings',
+                    attributes: [
+                        'listingId',
+                        'listingStatus',
+                        'listingPrice',
+                        'listedBy'
+                    ],
+                    include: [
+                        {
+                            model: User,
+                            as: 'lister',
+                            attributes: ['userId', 'firstName', 'lastName']
+                        }
+                    ]
+                }
+            ],
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit: pageSize
+        });
+
+        return {
+            data: properties,
+            pagination: {
+                currentPage: pageNumber,
+                pageSize,
+                totalProperties,
+                totalPages: Math.ceil(totalProperties / pageSize)
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError(
+            'PropertyService',
+            'getPropertiesByOwner',
+            e,
+            'Error fetching owner properties'
+        );
+    }
+};
+
+exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit = 10) => {
+    try {
+        const { Property } = getModels();
+
+        const pageNumber = Math.max(parseInt(page, 10), 1);
+        const pageSize = Math.max(parseInt(limit, 10), 1);
+        const offset = (pageNumber - 1) * pageSize;
+
+        const whereClause = {};
+
+        if (searchTerm && searchTerm.trim() !== "") {
+            whereClause[Op.or] = [
+                { title: { [Op.iLike]: `%${searchTerm}%` } },
+                { description: { [Op.iLike]: `%${searchTerm}%` } },
+                { city: { [Op.iLike]: `%${searchTerm}%` } },
+                { state: { [Op.iLike]: `%${searchTerm}%` } },
+                { address: { [Op.iLike]: `%${searchTerm}%` } }
+            ];
+        }
+
+        if (filters.propertyType) {
+            whereClause.propertyType = filters.propertyType;
+        }
+
+        if (filters.miniPrice || filters.maxPrice) {
+            const priceFilter = {};
+            if (!isNaN(parseFloat(filters.miniPrice))) {
+                priceFilter[Op.gte] = parseFloat(filters.miniPrice);
+            }
+            if (!isNaN(parseFloat(filters.maxPrice))) {
+                priceFilter[Op.lte] = parseFloat(filters.maxPrice);
+            }
+            if (Object.keys(priceFilter).length > 0) {
+                whereClause.price = priceFilter;
+            }
+        }
+
+        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
+            where: whereClause,
+            order: [['createdAt', 'DESC']],
+            offset,
+            limit: pageSize
+        });
+
+        return {
+            data: {
+                properties,
+                pagination: {
+                    currentPage: pageNumber,
+                    pageSize,
+                    totalProperties,
+                    totalPages: Math.ceil(totalProperties / pageSize)
+                },
+                searchTerm
+            },
+            statusCode: StatusCodes.OK
+        };
+
+    } catch (e) {
+        return handleServiceError('PropertyService', 'searchProperties', e, 'Error searching properties');
+    }
+};
+
+
+//TODO: TESTING OF THE FOLLOWING ENDPOINTS LATER
+
+exports.createListing = async (propertyId, body, userId, userRole) => {
+    try {
+        const { Property, Listing, User } = getModels();
+
+        const property = await Property.findByPk(propertyId);
+        if (!property) {
+            return {
+                error: "Property not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
+        }
+
+        const listing = await Listing.create({
+            propertyId: propertyId,
+            listedBy: userId,
+            listerRole: userRole,
+            listingPrice: body.listingPrice,
+            originalPrice: body.originalPrice || body.listingPrice,
+            marketingDescription: body.marketingDescription,
+            listingStatus: body.listingStatus || 'ACTIVE',
+            virtualTourUrl: body.virtualTourUrl || null,
+            isOpenHouse: body.isOpenHouse || false,
+            openHouseSchedule: body.openHouseSchedule || []
+        });
+
+        const listingWithDetails = await Listing.findByPk(listing.listingId, {
+            include: [
+                {
+                    model: Property,
+                    as: 'property',
+                    include: [{
+                        model: User,
+                        as: 'owner',
+                        attributes: ['userId', 'firstName', 'lastName']
+                    }]
+                },
+                {
+                    model: User,
+                    as: 'lister',
+                    attributes: ['userId', 'firstName', 'lastName', 'role']
+                }
+            ]
+        });
+
+        return {
+            data: listingWithDetails,
+            statusCode: StatusCodes.CREATED
+        };
+
+    } catch (e) {
+        return handleServiceError(
+            'PropertyService',
+            'createListing',
+            e,
+            'Error creating listing');
+    }
+};
+
+
+
+
 exports.getListingsByRole = async (role, page = 1, limit = 10) => {
     try {
         const validRoles = ['DEVELOPER', 'HOMEOWNER', 'REALTOR'];
@@ -391,58 +715,6 @@ exports.getListingsByRole = async (role, page = 1, limit = 10) => {
 };
 
 
-exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
-    try {
-        const pageNumber = Math.max(parseInt(page, 10), 1);
-        const pageSize = Math.max(parseInt(limit, 10), 1);
-        const offset = (pageNumber - 1) * pageSize;
-
-        const { Listing, Property, PropertyMedia, User } = getModels();
-
-        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
-            where: { ownerId },
-            include: [
-                {
-                    model: PropertyMedia,
-                    as: 'media',
-                    where: { isPrimary: true },
-                    required: false,
-                    attributes: ['mediaUrl']
-                },
-                {
-                    model: Listing,
-                    as: 'listings',
-                    attributes: [
-                        'listingId', 'listingStatus', 'listingPrice',
-                        'listerRole', 'listedBy'
-                    ],
-                    include: [{
-                        model: User,
-                        as: 'lister',
-                        attributes: ['userId', 'firstName', 'lastName']
-                    }]
-                }
-            ],
-            order: [['createdAt', 'DESC']],
-            offset,
-            limit: pageSize
-        });
-
-        return {
-            data: properties,
-            pagination: {
-                currentPage: pageNumber,
-                pageSize,
-                totalProperties,
-                totalPages: Math.ceil(totalProperties / pageSize)
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        return handleServiceError('PropertyService', 'getPropertiesByOwner', e, 'Error fetching owner properties');
-    }
-};
 
 exports.updateProperty = async (propertyId, body, files, userId) => {
     try {
@@ -531,7 +803,7 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
 
 exports.deleteProperty = async (propertyId, userId) => {
     try {
-        const { Listing, Property, PropertyMedia, User } = getModels();
+        const { Listing, Property, PropertyMedia } = getModels();
 
         const property = await Property.findByPk(propertyId);
 
@@ -590,68 +862,7 @@ exports.deleteProperty = async (propertyId, userId) => {
     }
 };
 
-exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit = 10) => {
-    try {
-        const { Listing, Property, PropertyMedia, User } = getModels();
 
-        const pageNumber = Math.max(parseInt(page, 10), 1);
-        const pageSize = Math.max(parseInt(limit, 10), 1);
-        const offset = (pageNumber - 1) * pageSize;
-
-        const whereClause = {};
-
-        if (searchTerm && searchTerm.trim() !== "") {
-            whereClause[Op.or] = [
-                { title: { [Op.iLike]: `%${searchTerm}%` } },
-                { description: { [Op.iLike]: `%${searchTerm}%` } },
-                { city: { [Op.iLike]: `%${searchTerm}%` } },
-                { state: { [Op.iLike]: `%${searchTerm}%` } },
-                { address: { [Op.iLike]: `%${searchTerm}%` } }
-            ];
-        }
-
-        if (filters.propertyType) {
-            whereClause.propertyType = filters.propertyType;
-        }
-
-        if (filters.minPrice || filters.maxPrice) {
-            const priceFilter = {};
-            if (!isNaN(parseFloat(filters.minPrice))) {
-                priceFilter[Op.gte] = parseFloat(filters.minPrice);
-            }
-            if (!isNaN(parseFloat(filters.maxPrice))) {
-                priceFilter[Op.lte] = parseFloat(filters.maxPrice);
-            }
-            if (Object.keys(priceFilter).length > 0) {
-                whereClause.price = priceFilter;
-            }
-        }
-
-        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
-            where: whereClause,
-            order: [['createdAt', 'DESC']],
-            offset,
-            limit: pageSize
-        });
-
-        return {
-            data: {
-                properties,
-                pagination: {
-                    currentPage: pageNumber,
-                    pageSize,
-                    totalProperties,
-                    totalPages: Math.ceil(totalProperties / pageSize)
-                },
-                searchTerm
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        return handleServiceError('PropertyService', 'searchProperties', e, 'Error searching properties');
-    }
-};
 
 exports.getPropertyStats = async (userId = null) => {
     try {
@@ -664,19 +875,19 @@ exports.getPropertyStats = async (userId = null) => {
             attributes: [
                 'status',
                 'propertyType',
-                [Property.sequelize.fn('COUNT', Property.sequelize.col('propertyId')), 'count']
+                [Property.sequelize.fn('COUNT', Property.sequelize.col('*')), 'count'] 
             ],
             group: ['status', 'propertyType'],
             raw: true
         });
 
+        // Listing stats grouped by listingStatus
         const listingStats = await Listing.findAll({
             attributes: [
-                'listerRole',
                 'listingStatus',
-                [Listing.sequelize.fn('COUNT', Listing.sequelize.col('listingId')), 'count']
+                [Listing.sequelize.fn('COUNT', Property.sequelize.col('*')), 'count']
             ],
-            group: ['listerRole', 'listingStatus'],
+            group: ['listingStatus'],
             raw: true
         });
 
@@ -690,7 +901,7 @@ exports.getPropertyStats = async (userId = null) => {
                 totalProperties,
                 availableProperties,
                 propertyStats: stats,
-                listingStats: listingStats
+                listingStats
             },
             statusCode: StatusCodes.OK
         };
@@ -700,69 +911,6 @@ exports.getPropertyStats = async (userId = null) => {
     }
 };
 
-exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
-    try {
-        const pageNumber = parseInt(page) || 1;
-        const pageSize = parseInt(limit) || 10;
-        const offset = (pageNumber - 1) * pageSize;
-
-        const { Property, PropertyMedia, User, Listing } = getModels();
-
-        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
-            where: { ownerId: userId },
-            include: [
-                {
-                    model: User,
-                    as: 'owner',
-                    attributes: ['userId', 'firstName', 'lastName', 'email', 'role']
-                },
-                {
-                    model: PropertyMedia,
-                    as: 'media',
-                    attributes: ['mediaId', 'mediaUrl', 'mediaType', 'isMainImage']
-                },
-                {
-                    model: Listing,
-                    as: 'listings',
-                    attributes: [
-                        'listingId', 'listingStatus', 'listingPrice',
-                        'listerRole', 'listedBy'
-                    ]
-                }
-            ],
-            order: [['createdAt', 'DESC']],
-            offset,
-            limit: pageSize
-        });
-
-        if (!properties.length) {
-            return {
-                error: 'No properties found for this user',
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        return {
-            data: {
-                properties,
-                pagination: {
-                    currentPage: pageNumber,
-                    pageSize,
-                    totalProperties,
-                    totalPages: Math.ceil(totalProperties / pageSize)
-                }
-            },
-            statusCode: StatusCodes.OK
-        };
-
-    } catch (e) {
-        return handleServiceError(
-            'PropertyService',
-            'getPropertiesByUser',
-            e,
-            'Error fetching properties by user');
-    }
-};
 
 exports.updatePropertyStatus = async (propertyId, status, userId) => {
     try {
@@ -792,7 +940,12 @@ exports.updatePropertyStatus = async (propertyId, status, userId) => {
             };
         }
 
-        if (property.ownerId !== userId && !['ADMIN', 'SYSADMIN'].includes(userId.role)) {
+        if (property.ownerId !== userId && !['ADMIN',
+            'SYSADMIN',
+            'REALTOR',
+            'DEVELOPER',
+            'HOMEOWNER'
+        ].includes(userId.role)) {
             return {
                 error: 'Unauthorized to update this property',
                 statusCode: StatusCodes.FORBIDDEN

@@ -76,10 +76,10 @@ const upload = require("../app/utils/upload")
  *       403:
  *         description: Forbidden
  */
-router.post("/create/:userId",
+router.post("/create",
     authenticateUser,
-    authorizeRoles("ADMIN","REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
-    , upload.array("cloudinaryUrls",5), controller.createProperty);
+    authorizeRoles("ADMIN", "REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN")
+    , upload.array("title", 5), controller.createProperty);
 
 /**
  * @swagger
@@ -268,7 +268,8 @@ router.get("/", controller.getAllProperties);
  */
 router.get("/owner/:ownerId",
     authenticateUser,
-    authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"), controller.getPropertiesByOwner);
+    authorizeRoles("HOMEOWNER",
+        "ADMIN", "SYSADMIN", "REALTOR", "DEVELOPER"), controller.getPropertiesByOwner);
 
 /**
  * @swagger
@@ -338,7 +339,7 @@ router.get("/owner/:ownerId",
  */
 router.put("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN")
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER")
     , upload.array("mediaType"), controller.updateProperty);
 
 /**
@@ -368,7 +369,7 @@ router.put("/:propertyId",
  */
 router.delete("/:propertyId",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.deleteProperty);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER"), controller.deleteProperty);
 
 /**
  * @swagger
@@ -402,9 +403,12 @@ router.delete("/:propertyId",
  *       403:
  *         description: Forbidden
  */
-router.get("/properties/analytics",
+router.get("/analytics",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.getPropertyStats);
+    authorizeRoles("ADMIN",
+        "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"),
+    controller.getPropertyStats);
 
 /**
  * @swagger
@@ -442,7 +446,8 @@ router.get("/properties/analytics",
  */
 router.get("/user/:userId",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.getPropertiesByUser);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"), controller.getPropertiesByUser);
 
 /**
  * @swagger
@@ -497,14 +502,15 @@ router.get("/user/:userId",
  */
 router.put("/:propertyId/status",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN"), controller.updatePropertyStatus);
+    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN",
+        "REALTOR", "DEVELOPER"), controller.updatePropertyStatus);
 
-router.post("/listing/:propertyId/:userId", 
-    authenticateUser,
-    authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"),
-    controller.createListing)
+// router.post("/listing/:propertyId/:userId", 
+//     authenticateUser,
+//     authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"),
+//     controller.createListing)
 
 
-router.get("/role/listings", controller.getListingsByRole)
+// router.get("/role/listings", controller.getListingsByRole)
 
 module.exports = router;

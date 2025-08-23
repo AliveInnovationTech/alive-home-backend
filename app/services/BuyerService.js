@@ -5,6 +5,7 @@ const buyerValidator = require("../validators/BuyerValidator");
 const logger = require("../utils/logger");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
 const propertyService = require("./PropertyService")
+const{Op} = require("sequelize");
 
 // Wait for models to be loaded
 const getModels = () => {
@@ -469,7 +470,7 @@ exports.searchProperties = async (buyerId, query) => {
         const filters = {
             ...query?.filters,
             propertyType: buyer.propertyType || query?.filters?.propertyType,
-            minPrice: buyer.minimumBudget || query?.filters?.minPrice,
+            minPrice: buyer.minimumBudget || query?.filters?.miniPrice,
             maxPrice: buyer.maximumBudget || query?.filters?.maxPrice
         };
 
@@ -487,15 +488,13 @@ exports.searchProperties = async (buyerId, query) => {
         return {
             data: {
                 buyerId: buyer.buyerId,
-                properties: propertySearch.data,
-                totalProperties: propertySearch.pagination.totalProperties,
-                pagination: propertySearch.pagination
+                ...propertySearch.data 
             },
             statusCode: StatusCodes.OK
         };
 
     } catch (e) {
-        console.log("An error occurred while searching properties:", e);
+        console.error("An error occurred while searching properties:", e);
         return {
             error: e.message,
             statusCode: StatusCodes.INTERNAL_SERVER_ERROR

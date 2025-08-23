@@ -69,8 +69,9 @@ exports.login = async (body) => {
         }
 
         const token = jwt.sign({ userId: user.userId },
-            process.env.JWT_SECRET,
-            { expiresIn: "1h" }
+            process.env.SECURITY_TOKEN,
+            { expiresIn: "1h" },
+            { algorithm: "HS256" }
         );
 
         logInfo('User login successful', { userId: user.userId, email: user.email });
@@ -85,11 +86,11 @@ exports.login = async (body) => {
                         roleId: user.role.roleId,
                         name: user.role.name
                     } : null,
-                    profilePictureUrl: user.profilePictureUrl,
-                    isBuyerProfileFiled:user.isBuyerProfileFiled,
-                    isDeveloperProfileFiled:user.isDeveloperProfileFiled,
-                    isRealtorProfileFiled:user.isRealtorProfileFiled,
-                    isHomeownerProfileFiled:user.isHomeownerProfileFiled
+                    profilePicture: user.profilePicture,
+                    isBuyerProfileFiled: user.isBuyerProfileFiled,
+                    isDeveloperProfileFiled: user.isDeveloperProfileFiled,
+                    isRealtorProfileFiled: user.isRealtorProfileFiled,
+                    isHomeownerProfileFiled: user.isHomeownerProfileFiled
 
                 },
                 token
@@ -127,7 +128,7 @@ exports.me = async (userId) => {
                     firstName: user.firstName,
                     lastName: user.lastName,
                     role: user.role?.name || null,
-                    profilePictureUrl: user.profilePictureUrl
+                    profilePicture: user.profilePicture
                 }
             },
             statusCode: StatusCodes.OK
