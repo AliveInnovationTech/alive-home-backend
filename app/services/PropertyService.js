@@ -258,9 +258,19 @@ exports.createProperty = async (body, files, user, userRole) => {
 
 exports.getPropertyById = async (propertyId) => {
 
-    const { Property } = getModels();
+    const { Property, PropertyMedia, Listing } = getModels();
     try {
-        const includeOptions = [];
+        const includeOptions = [
+            {
+                model: PropertyMedia,
+                as: 'media',
+                attributes: ['mediaId', 'cloudinaryUrl', 'mediaType', 'isMainImage']
+            },
+            {
+                model: Listing,
+                as: "listings",
+            }
+        ];
 
         const property = await Property.findByPk(propertyId, {
             include: includeOptions
@@ -380,7 +390,7 @@ exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
 
 exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
     try {
-        const { Property } = getModels();
+        const { Property, PropertyMedia, Listing, User } = getModels();
 
         const pageNumber = Math.max(parseInt(page, 10), 1);
         const pageSize = Math.max(parseInt(limit, 10), 1);
@@ -389,6 +399,7 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const whereClause = {};
         const listingWhereClause = {};
 
+        // Property filters
         if (filters.city) {
             whereClause.city = { [Op.iLike]: `%${filters.city}%` };
         }
@@ -402,41 +413,70 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
             whereClause.status = filters.status;
         }
 
+        // Listing filters
         if (filters.listerRole) {
             listingWhereClause.listerRole = filters.listerRole;
         }
 
-        if (filters.directOwnerOnly === 'true') {
-        }
-
+        // Price filters
         if (filters.minPrice || filters.maxPrice) {
             whereClause.price = {};
             if (filters.minPrice) whereClause.price[Op.gte] = parseFloat(filters.minPrice);
             if (filters.maxPrice) whereClause.price[Op.lte] = parseFloat(filters.maxPrice);
         }
 
+        // Bedrooms filters
         if (filters.minBedrooms) {
             whereClause.bedrooms = { [Op.gte]: parseInt(filters.minBedrooms) };
         }
         if (filters.maxBedrooms) {
-            whereClause.bedrooms = { ...whereClause.bedrooms, [Op.lte]: parseInt(filters.maxBedrooms) };
+            whereClause.bedrooms = {
+                ...whereClause.bedrooms,
+                [Op.lte]: parseInt(filters.maxBedrooms)
+            };
         }
 
+        // Query options
         const queryOptions = {
             where: whereClause,
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
             offset,
-            limit: pageSize
+            limit: pageSize,
+            include: [
+                {
+                    model: PropertyMedia,
+                    as: "media",
+                    attributes: ["mediaId", "cloudinaryUrl", "mediaType", "isMainImage"],
+                },
+                {
+                    model: Listing,
+                    as: 'listings',
+                    attributes: [
+                        'listingId',
+                        'listingStatus',
+                        'listingPrice',
+                        'listedBy'
+                    ],
+                    include: [
+                        {
+                            model: User,
+                            as: 'lister',
+                            attributes: ['userId', 'firstName', 'lastName']
+                        }
+                    ]
+                }
+            ],
         };
 
         const { rows: properties, count: totalProperties } = await Property.findAndCountAll(queryOptions);
+
         let filteredProperties = properties;
-        if (filters.directOwnerOnly === 'true') {
-            filteredProperties = properties.filter(property => {
-                return property.listings && property.listings.some(listing =>
+        if (filters.directOwnerOnly === "true") {
+            filteredProperties = properties.filter(property =>
+                property.listings && property.listings.some(listing =>
                     listing.listedBy === property.ownerId
-                );
-            });
+                )
+            );
         }
 
         return {
@@ -444,14 +484,16 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
             pagination: {
                 currentPage: pageNumber,
                 pageSize,
-                totalProperties: filters.directOwnerOnly === 'true' ? filteredProperties.length : totalProperties,
-                totalPages: Math.ceil((filters.directOwnerOnly === 'true' ? filteredProperties.length : totalProperties) / pageSize)
+                totalProperties: filters.directOwnerOnly === "true" ? filteredProperties.length : totalProperties,
+                totalPages: Math.ceil(
+                    (filters.directOwnerOnly === "true" ? filteredProperties.length : totalProperties) / pageSize
+                ),
             },
-            statusCode: StatusCodes.OK
+            statusCode: StatusCodes.OK,
         };
 
     } catch (e) {
-        return handleServiceError('PropertyService', 'getAllProperties', e, 'Error fetching properties');
+        return handleServiceError("PropertyService", "getAllProperties", e, "Error fetching properties");
     }
 };
 
@@ -875,7 +917,7 @@ exports.getPropertyStats = async (userId = null) => {
             attributes: [
                 'status',
                 'propertyType',
-                [Property.sequelize.fn('COUNT', Property.sequelize.col('*')), 'count'] 
+                [Property.sequelize.fn('COUNT', Property.sequelize.col('*')), 'count']
             ],
             group: ['status', 'propertyType'],
             raw: true
