@@ -21,7 +21,7 @@ exports.createUser = async (body) => {
     let schema = {
         email: Joi.string().email().required(),
         phoneNumber: Joi.string().required(),
-        password: Joi.string().min(8).max(15).required(),
+        password: Joi.string().min(8).max(32).required(),
         firstName: Joi.string().required(),
         lastName: Joi.string().required(),
         roleId: Joi.string()

@@ -19,35 +19,6 @@ exports.createProperty = async (req, res) => {
     return response.success(res, result.data, result.statusCode);
 };
 
-exports.createListing = async (req, res) => {
-    const {
-        error,
-        data,
-        statusCode
-    } = await propertyService.createListing(req.body, req.params.propertyId, req.user)
-
-    if (error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode)
-}
-
-exports.getListingsByRole = async (req, res) => {
-    const {
-        error,
-        statusCode,
-        data
-
-    } = await propertyService.getListingsByRole(
-        req.query.role,
-        req.query.page,
-        req.query.limit
-    )
-    if (error) return response.error(res, error, statusCode);
-
-    return response.success(res, data, statusCode)
-}
-
-
 exports.getProperty = async (req, res) => {
     const {
         error,
@@ -61,11 +32,16 @@ exports.getProperty = async (req, res) => {
 }
 
 exports.getAllProperties = async (req, res) => {
+
     const {
         error,
         data,
         statusCode
-    } = await propertyService.getAllProperties(req.query);
+    } = await propertyService.getAllProperties(
+        req.query,
+        req.query.page,
+        req.query.limit
+    );
 
     if (error) return response.error(res, error, statusCode);
 
@@ -104,24 +80,25 @@ exports.deleteProperty = async (req, res) => {
         error,
         data,
         statusCode
-    } = await propertyService.deleteProperty(req.params.propertyId, req.user);
+    } = await propertyService.deleteProperty(req.params.propertyId, req.params.userId);
 
     if (error) return response.error(res, error, statusCode);
 
     return response.success(res, data, statusCode);
 };
 
-exports.searchProperties = async (req, res) => {
+exports.deleteAllProperties = async (req, res) => {
     const {
         error,
         statusCode,
         data
-    } = await propertyService.searchProperties(req.query.q, req.query);
+    } = await propertyService.deleteAllProperties(req.user);
 
     if (error) return response.error(res, error, statusCode);
 
-    return response.success(res, data, statusCode);
-};
+    return response.success(res, data, statusCode)
+}
+
 
 exports.getPropertyStats = async (req, res) => {
     const {

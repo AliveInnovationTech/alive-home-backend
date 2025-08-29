@@ -1,13 +1,13 @@
 "use strict";
 const { StatusCodes } = require("http-status-codes")
 const authValidator = require("../validators/AuthValidator");
-const jwt = require("jsonwebtoken");
 const crypto = require("crypto-random-string")
 const { Op } = require("sequelize");
 const passwordValidator = require("../validators/PasswordValidator");
 const { sendEmailNotification } = require("../services/NotificationService");
 const sequelize = require("../../lib/database");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
+const { createJWT } = require("../utils/jwt")
 
 
 const getModels = () => {
@@ -68,11 +68,7 @@ exports.login = async (body) => {
             };
         }
 
-        const token = jwt.sign({ userId: user.userId },
-            process.env.SECURITY_TOKEN,
-            { expiresIn: "1h" },
-            { algorithm: "HS256" }
-        );
+        const token = createJWT({ payload: { userId: user.userId } });
 
         logInfo('User login successful', { userId: user.userId, email: user.email });
 
@@ -103,9 +99,10 @@ exports.login = async (body) => {
     }
 }
 
+
 exports.me = async (userId) => {
 
-    const { User, Token } = getModels();
+    const { User } = getModels();
     try {
         const user = await User.findByPk(userId, {
             include: [{ association: 'role', attributes: ['name'] }]
