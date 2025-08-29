@@ -109,59 +109,6 @@ router.post("/create",
  *       404:
  *         description: Property not found
  */
-/**
- * @swagger
- * /api/v1/properties/search:
- *   get:
- *     summary: Search properties
- *     tags: [Properties]
- *     parameters:
- *       - in: query
- *         name: q
- *         schema:
- *           type: string
- *         description: Search query
- *       - in: query
- *         name: propertyType
- *         schema:
- *           type: string
- *         description: Property type filter
- *       - in: query
- *         name: minPrice
- *         schema:
- *           type: number
- *         description: Minimum price
- *       - in: query
- *         name: maxPrice
- *         schema:
- *           type: number
- *         description: Maximum price
- *       - in: query
- *         name: location
- *         schema:
- *           type: string
- *         description: Location filter
- *       - in: query
- *         name: bedrooms
- *         schema:
- *           type: number
- *         description: Number of bedrooms
- *     responses:
- *       200:
- *         description: Search results
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Property'
- */
-router.get("/search", controller.searchProperties);
 
 router.get("/:propertyId", controller.getProperty);
 
@@ -340,7 +287,7 @@ router.get("/owner/:ownerId",
 router.put("/:propertyId",
     authenticateUser,
     authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER")
-    , upload.array("mediaType"), controller.updateProperty);
+    , upload.array("ImageTitle", 5), controller.updateProperty);
 
 /**
  * @swagger
@@ -367,9 +314,17 @@ router.put("/:propertyId",
  *       404:
  *         description: Property not found
  */
-router.delete("/:propertyId",
+router.delete("/:propertyId/:userId",
     authenticateUser,
-    authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN", "REALTOR", "DEVELOPER"), controller.deleteProperty);
+    authorizeRoles(
+        "ADMIN",
+        "HOMEOWNER",
+        "SYSADMIN",
+        "REALTOR",
+        "DEVELOPER"), controller.deleteProperty);
+
+router.delete("/delete-all",
+    authenticateUser, authorizeRoles("SYSADMIN"), controller.deleteAllProperties);
 
 /**
  * @swagger
@@ -505,12 +460,6 @@ router.put("/:propertyId/status",
     authorizeRoles("ADMIN", "HOMEOWNER", "SYSADMIN",
         "REALTOR", "DEVELOPER"), controller.updatePropertyStatus);
 
-// router.post("/listing/:propertyId/:userId", 
-//     authenticateUser,
-//     authorizeRoles("HOMEOWNER", "ADMIN", "SYSADMIN"),
-//     controller.createListing)
 
-
-// router.get("/role/listings", controller.getListingsByRole)
 
 module.exports = router;

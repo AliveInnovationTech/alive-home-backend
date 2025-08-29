@@ -5,7 +5,7 @@ const sequelize = require("../../lib/database")
 const cloudinary = require("../utils/cloudinary");
 const logger = require("../utils/logger");
 const { handleServiceError, logInfo } = require("../utils/errorHandler");
-
+const{PROPERTY_TYPES, PROPERTY_STATUS, LISTING_STATUS} =require("../utils/constants")
 
 
 const getModels = () => {
@@ -47,14 +47,42 @@ exports.createProperty = async (body, files, user, userRole) => {
         }
 
         const validPropertyTypes = [
-            "SINGLE_FAMILY",
-            "MULTI_FAMILY",
-            "CONDO",
-            "APARTMENT",
-            "COMMERCIAL",
-            "LAND",
-            "VILLA",
-            "TOWNHOUSE"
+            PROPERTY_TYPES.APARTMENT,
+            PROPERTY_TYPES.HOUSE,
+            PROPERTY_TYPES.VILLA,
+            PROPERTY_TYPES.TOWNHOUSE,
+            PROPERTY_TYPES.DETACHED_HOUSE,
+            PROPERTY_TYPES.BOYS_QUARTERS,
+            PROPERTY_TYPES.SEMI_DETACHED,
+            PROPERTY_TYPES.TERRACE_HOUSE,
+            PROPERTY_TYPES.DUPLEX,
+            PROPERTY_TYPES.MANSION,
+            PROPERTY_TYPES.ESTATE_HOUSE,
+            PROPERTY_TYPES.BUNGALOW,
+            PROPERTY_TYPES.PENTHOUSE,
+            PROPERTY_TYPES.MINI_FLAT,
+            PROPERTY_TYPES.CHALET,
+            PROPERTY_TYPES.COMMERCIAL,
+            PROPERTY_TYPES.LAND,
+            PROPERTY_TYPES.COMMERCIAL_OFFICE,
+            PROPERTY_TYPES.COMMERCIAL_PLAZA,
+            PROPERTY_TYPES.RETAIL_SHOP,
+            PROPERTY_TYPES.WAREHOUSE,
+            PROPERTY_TYPES.HOTEL,
+            PROPERTY_TYPES.LAND_RESIDENTIAL,
+            PROPERTY_TYPES.ROOM_AND_PARLOUR,
+            PROPERTY_TYPES.COMPOUND,
+            PROPERTY_TYPES.STUDENT_HOSTEL,
+            PROPERTY_TYPES.LAND_COMMERCIAL,
+            PROPERTY_TYPES.LAND_INDUSTRIAL,
+            PROPERTY_TYPES.LAND_AGRICULTURAL,
+            PROPERTY_TYPES.SERVICED_APARTMENT,
+            PROPERTY_TYPES.SELF_CONTAINED,
+            PROPERTY_TYPES.LAND_RESIDENTIAL,
+            PROPERTY_TYPES.CONDO,
+            PROPERTY_TYPES.MULTIFAMILY,
+            PROPERTY_TYPES.SINGLE_FAMILY
+
         ];
         if (!validPropertyTypes.includes(body.propertyType)) {
             return {
@@ -72,19 +100,16 @@ exports.createProperty = async (body, files, user, userRole) => {
         }
 
         const validStatuses = [
-            "active",
-            "pending",
-            "draft",
-            "sold",
-            "unavailable",
-            "AVAILABLE",
-            "SOLD",
-            "PENDING",
-            "DRAFT"
+            PROPERTY_STATUS.ACTIVE,
+            PROPERTY_STATUS.PENDING,
+            PROPERTY_STATUS.DRAFT,
+            PROPERTY_STATUS.SOLD,
+            PROPERTY_STATUS.UNAVAILABLE,
+            PROPERTY_STATUS.AVAILABLE
         ];
-        let status = body.status || "AVAILABLE";
+        let status = body.status || PROPERTY_STATUS.AVAILABLE;
         if (!validStatuses.includes(status)) {
-            status = "AVAILABLE";
+            status = PROPERTY_STATUS.AVAILABLE;
         }
         const numericFields = {
             bedrooms: { value: body.bedrooms, min: 0 },
@@ -200,7 +225,7 @@ exports.createProperty = async (body, files, user, userRole) => {
             }
         }
 
-        if (body.createListing !== false) {
+        if (body.status === PROPERTY_STATUS.AVAILABLE) {
             await Listing.create({
                 propertyId: property.propertyId,
                 listedBy: user.userId,
@@ -208,7 +233,7 @@ exports.createProperty = async (body, files, user, userRole) => {
                 listingPrice: body.price,
                 originalPrice: body.price,
                 marketingDescription: body.marketingDescription || body.description,
-                listingStatus: "ACTIVE"
+                listingStatus: LISTING_STATUS.ACTIVE,
             });
         }
 
@@ -258,7 +283,7 @@ exports.createProperty = async (body, files, user, userRole) => {
 
 exports.getPropertyById = async (propertyId) => {
 
-    const { Property, PropertyMedia, Listing } = getModels();
+    const { Property, PropertyMedia, Listing, User } = getModels();
     try {
         const includeOptions = [
             {
@@ -268,7 +293,20 @@ exports.getPropertyById = async (propertyId) => {
             },
             {
                 model: Listing,
-                as: "listings",
+                as: 'listings',
+                attributes: [
+                    'listingId',
+                    'listingStatus',
+                    'listingPrice',
+                    'listedBy'
+                ],
+                include: [
+                    {
+                        model: User,
+                        as: 'lister',
+                        attributes: ['userId', 'firstName', 'lastName']
+                    }
+                ]
             }
         ];
 
@@ -388,7 +426,7 @@ exports.getPropertiesByUser = async (userId, page = 1, limit = 10) => {
 };
 
 
-exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
+exports.getAllProperties = async (filters = {}, page = 1, limit = 20) => {
     try {
         const { Property, PropertyMedia, Listing, User } = getModels();
 
@@ -399,54 +437,323 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const whereClause = {};
         const listingWhereClause = {};
 
-        // Property filters
-        if (filters.city) {
+        if (filters.search || filters.searchTerm || filters.q) {
+            let rawSearch = filters.searchTerm || filters.q || "";
+            
+            if (Array.isArray(rawSearch)) {
+                rawSearch = rawSearch[0] || "";
+            }
+            
+            const searchTerm = String(rawSearch).trim();
+            if (searchTerm !== "") {
+                whereClause[Op.or] = [
+                    { title: { [Op.iLike]: `%${searchTerm}%` } },
+                    { description: { [Op.iLike]: `%${searchTerm}%` } },
+                    { city: { [Op.iLike]: `%${searchTerm}%` } },
+                    { state: { [Op.iLike]: `%${searchTerm}%` } },
+                    { address: { [Op.iLike]: `%${searchTerm}%` } }
+                ];
+            }
+        }
+
+        if (filters.city && !filters.search && !filters.searchTerm && !filters.q) {
             whereClause.city = { [Op.iLike]: `%${filters.city}%` };
         }
-        if (filters.state) {
+        if (filters.state && !filters.search && !filters.searchTerm && !filters.q) {
             whereClause.state = { [Op.iLike]: `%${filters.state}%` };
         }
+
         if (filters.propertyType) {
             whereClause.propertyType = filters.propertyType;
         }
+
         if (filters.status) {
             whereClause.status = filters.status;
         }
 
-        // Listing filters
-        if (filters.listerRole) {
-            listingWhereClause.listerRole = filters.listerRole;
-        }
+        const minPrice = filters.minPrice || filters.miniPrice;
+        const maxPrice = filters.maxPrice;
 
-        // Price filters
-        if (filters.minPrice || filters.maxPrice) {
+        if (minPrice || maxPrice) {
             whereClause.price = {};
-            if (filters.minPrice) whereClause.price[Op.gte] = parseFloat(filters.minPrice);
-            if (filters.maxPrice) whereClause.price[Op.lte] = parseFloat(filters.maxPrice);
+            if (minPrice) {
+                const minPriceNum = parseFloat(minPrice);
+                if (!isNaN(minPriceNum)) {
+                    whereClause.price[Op.gte] = minPriceNum;
+                }
+            }
+            if (maxPrice) {
+                const maxPriceNum = parseFloat(maxPrice);
+                if (!isNaN(maxPriceNum)) {
+                    whereClause.price[Op.lte] = maxPriceNum;
+                }
+            }
         }
 
-        // Bedrooms filters
-        if (filters.minBedrooms) {
-            whereClause.bedrooms = { [Op.gte]: parseInt(filters.minBedrooms) };
+        if (filters.bedrooms) {
+            const bedroomsNum = parseInt(filters.bedrooms, 10);
+            if (!isNaN(bedroomsNum)) {
+                whereClause.bedrooms = bedroomsNum;
+            }
+        } else {
+            if (filters.minBedrooms) {
+                const minBedroomsNum = parseInt(filters.minBedrooms, 10);
+                if (!isNaN(minBedroomsNum)) {
+                    whereClause.bedrooms = { [Op.gte]: minBedroomsNum };
+                }
+            }
+            if (filters.maxBedrooms) {
+                const maxBedroomsNum = parseInt(filters.maxBedrooms, 10);
+                if (!isNaN(maxBedroomsNum)) {
+                    whereClause.bedrooms = {
+                        ...whereClause.bedrooms,
+                        [Op.lte]: maxBedroomsNum
+                    };
+                }
+            }
         }
-        if (filters.maxBedrooms) {
-            whereClause.bedrooms = {
-                ...whereClause.bedrooms,
-                [Op.lte]: parseInt(filters.maxBedrooms)
+
+        // BATHROOM FILTERS (FIXED: Added NaN validation and exact match support)
+        if (filters.bathrooms) {
+            const bathroomsNum = parseFloat(filters.bathrooms);
+            if (!isNaN(bathroomsNum)) {
+                whereClause.bathrooms = bathroomsNum;
+            }
+        } else {
+            if (filters.minBathrooms) {
+                const minBathroomsNum = parseFloat(filters.minBathrooms);
+                if (!isNaN(minBathroomsNum)) {
+                    whereClause.bathrooms = { [Op.gte]: minBathroomsNum };
+                }
+            }
+            if (filters.maxBathrooms) {
+                const maxBathroomsNum = parseFloat(filters.maxBathrooms);
+                if (!isNaN(maxBathroomsNum)) {
+                    whereClause.bathrooms = {
+                        ...whereClause.bathrooms,
+                        [Op.lte]: maxBathroomsNum
+                    };
+                }
+            }
+        }
+
+        if (filters.minSquareFeet || filters.maxSquareFeet) {
+            whereClause.squareFeet = {};
+            if (filters.minSquareFeet) {
+                const minSqFt = parseFloat(filters.minSquareFeet);
+                if (!isNaN(minSqFt)) {
+                    whereClause.squareFeet[Op.gte] = minSqFt;
+                }
+            }
+            if (filters.maxSquareFeet) {
+                const maxSqFt = parseFloat(filters.maxSquareFeet);
+                if (!isNaN(maxSqFt)) {
+                    whereClause.squareFeet[Op.lte] = maxSqFt;
+                }
+            }
+        }
+
+        if (filters.minLotSize || filters.maxLotSize) {
+            whereClause.lotSize = {};
+            if (filters.minLotSize) {
+                const minLot = parseFloat(filters.minLotSize);
+                if (!isNaN(minLot)) {
+                    whereClause.lotSize[Op.gte] = minLot;
+                }
+            }
+            if (filters.maxLotSize) {
+                const maxLot = parseFloat(filters.maxLotSize);
+                if (!isNaN(maxLot)) {
+                    whereClause.lotSize[Op.lte] = maxLot;
+                }
+            }
+        }
+
+        if (filters.minYearBuilt || filters.maxYearBuilt) {
+            whereClause.yearBuilt = {};
+            if (filters.minYearBuilt) {
+                const minYear = parseInt(filters.minYearBuilt, 10);
+                if (!isNaN(minYear)) {
+                    whereClause.yearBuilt[Op.gte] = minYear;
+                }
+            }
+            if (filters.maxYearBuilt) {
+                const maxYear = parseInt(filters.maxYearBuilt, 10);
+                if (!isNaN(maxYear)) {
+                    whereClause.yearBuilt[Op.lte] = maxYear;
+                }
+            }
+        }
+
+        if (filters.zipCode) {
+            whereClause.zipCode = { [Op.iLike]: `%${filters.zipCode}%` };
+        }
+
+        if (filters.features) {
+            const featuresArray = Array.isArray(filters.features)
+                ? filters.features
+                : filters.features.split(',').map(f => f.trim());
+
+            whereClause.features = {
+                [Op.contains]: featuresArray
             };
         }
 
-        // Query options
+        if (filters.latitude && filters.longitude && filters.radius) {
+        }
+
+        if (filters.listedAfter) {
+            whereClause.createdAt = { [Op.gte]: new Date(filters.listedAfter) };
+        }
+        if (filters.listedBefore) {
+            whereClause.createdAt = {
+                ...whereClause.createdAt,
+                [Op.lte]: new Date(filters.listedBefore)
+            };
+        }
+
+        if (filters.listerRole) {
+            listingWhereClause.listerRole = filters.listerRole;
+        }
+        if (filters.listingStatus) {
+            listingWhereClause.listingStatus = filters.listingStatus;
+        }
+
+        if (filters.minListingPrice || filters.maxListingPrice) {
+            listingWhereClause.listingPrice = {};
+            if (filters.minListingPrice) {
+                const minListingPrice = parseFloat(filters.minListingPrice);
+                if (!isNaN(minListingPrice)) {
+                    listingWhereClause.listingPrice[Op.gte] = minListingPrice;
+                }
+            }
+            if (filters.maxListingPrice) {
+                const maxListingPrice = parseFloat(filters.maxListingPrice);
+                if (!isNaN(maxListingPrice)) {
+                    listingWhereClause.listingPrice[Op.lte] = maxListingPrice;
+                }
+            }
+        }
+
+        if (filters.mlsNumber) {
+            listingWhereClause.mlsNumber = { [Op.iLike]: `%${filters.mlsNumber}%` };
+        }
+        if (filters.mlsStatus) {
+            listingWhereClause.mlsStatus = { [Op.iLike]: `%${filters.mlsStatus}%` };
+        }
+
+        if (filters.isOpenHouse !== undefined) {
+            listingWhereClause.isOpenHouse = filters.isOpenHouse === 'true';
+        }
+
+        if (filters.hasVirtualTour === 'true') {
+            listingWhereClause.virtualTourUrl = { [Op.ne]: null };
+        }
+
+        if (filters.listedAfter || filters.listedBefore) {
+            listingWhereClause.listedDate = {};
+            if (filters.listedAfter) listingWhereClause.listedDate[Op.gte] = new Date(filters.listedAfter);
+            if (filters.listedBefore) listingWhereClause.listedDate[Op.lte] = new Date(filters.listedBefore);
+        }
+
+        let orderBy = [["createdAt", "DESC"]];
+
+        if (filters.sortBy) {
+            switch (filters.sortBy) {
+                case 'price_asc':
+                    orderBy = [["price", "ASC"]];
+                    break;
+                case 'price_desc':
+                    orderBy = [["price", "DESC"]];
+                    break;
+                case 'listing_price_asc':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "listingPrice", "ASC"]];
+                    break;
+                case 'listing_price_desc':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "listingPrice", "DESC"]];
+                    break;
+                case 'newest':
+                    orderBy = [["createdAt", "DESC"]];
+                    break;
+                case 'oldest':
+                    orderBy = [["createdAt", "ASC"]];
+                    break;
+                case 'recently_listed':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "listedDate", "DESC"]];
+                    break;
+                case 'bedrooms_desc':
+                    orderBy = [["bedrooms", "DESC"]];
+                    break;
+                case 'bedrooms_asc':
+                    orderBy = [["bedrooms", "ASC"]];
+                    break;
+                case 'bathrooms_desc':
+                    orderBy = [["bathrooms", "DESC"]];
+                    break;
+                case 'bathrooms_asc':
+                    orderBy = [["bathrooms", "ASC"]];
+                    break;
+                case 'square_feet_desc':
+                    orderBy = [["squareFeet", "DESC"]];
+                    break;
+                case 'square_feet_asc':
+                    orderBy = [["squareFeet", "ASC"]];
+                    break;
+                case 'year_built_desc':
+                    orderBy = [["yearBuilt", "DESC"]];
+                    break;
+                case 'year_built_asc':
+                    orderBy = [["yearBuilt", "ASC"]];
+                    break;
+                case 'lot_size_desc':
+                    orderBy = [["lotSize", "DESC"]];
+                    break;
+                case 'lot_size_asc':
+                    orderBy = [["lotSize", "ASC"]];
+                    break;
+                case 'most_viewed':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "viewCount", "DESC"]];
+                    break;
+                case 'most_inquired':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "inquiryCount", "DESC"]];
+                    break;
+                case 'most_favorited':
+                    orderBy = [[{ model: Listing, as: 'listings' }, "favoriteCount", "DESC"]];
+                    break;
+                default:
+                    orderBy = [["createdAt", "DESC"]];
+            }
+        }
+
         const queryOptions = {
             where: whereClause,
-            order: [["createdAt", "DESC"]],
+            order: orderBy,
             offset,
             limit: pageSize,
             include: [
                 {
                     model: PropertyMedia,
                     as: "media",
-                    attributes: ["mediaId", "cloudinaryUrl", "mediaType", "isMainImage"],
+                    attributes: [
+                        "mediaId",
+                        "cloudinaryUrl",
+                        "mediaType",
+                        "isMainImage",
+                        "isFeatured",
+                        "displayOrder",
+                        "ImageTitle",
+                        "description",
+                        "altText",
+                        "width",
+                        "height",
+                        "duration"
+                    ],
+                    where: {
+                        isActive: true,
+                        isProcessed: true
+                    },
+                    order: [['displayOrder', 'ASC'], ['isMainImage', 'DESC']],
+                    required: false
                 },
                 {
                     model: Listing,
@@ -455,13 +762,29 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
                         'listingId',
                         'listingStatus',
                         'listingPrice',
-                        'listedBy'
+                        'originalPrice',
+                        'listedBy',
+                        'listedDate',
+                        'marketingDescription',
+                        'virtualTourUrl',
+                        'isOpenHouse',
+                        'openHouseSchedule',
+                        'viewCount',
+                        'inquiryCount',
+                        'favoriteCount',
+                        'mlsNumber',
+                        'mlsStatus',
+                        'commissionRate',
+                        'soldDate',
+                        'expirationDate'
                     ],
+                    where: Object.keys(listingWhereClause).length > 0 ? listingWhereClause : undefined,
+                    required: Object.keys(listingWhereClause).length > 0,
                     include: [
                         {
                             model: User,
                             as: 'lister',
-                            attributes: ['userId', 'firstName', 'lastName']
+                            attributes: ['userId', 'firstName', 'lastName', 'email', 'phoneNumber']
                         }
                     ]
                 }
@@ -471,15 +794,43 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
         const { rows: properties, count: totalProperties } = await Property.findAndCountAll(queryOptions);
 
         let filteredProperties = properties;
-        if (filters.directOwnerOnly === "true") {
+
+        if (filters.latitude && filters.longitude && filters.radius) {
+            const geoProperties = await Property.findWithinRadius(
+                parseFloat(filters.latitude),
+                parseFloat(filters.longitude),
+                parseFloat(filters.radius) || 10
+            );
+
+            const geoPropertyIds = geoProperties.map(p => p.propertyId);
             filteredProperties = properties.filter(property =>
+                geoPropertyIds.includes(property.propertyId)
+            );
+        }
+
+        if (filters.directOwnerOnly === "true") {
+            filteredProperties = filteredProperties.filter(property =>
                 property.listings && property.listings.some(listing =>
                     listing.listedBy === property.ownerId
                 )
             );
         }
 
-        return {
+        if (filters.hasImages === 'true') {
+            filteredProperties = filteredProperties.filter(property =>
+                property.media && property.media.length > 0
+            );
+        }
+
+        if (filters.hasVirtualTour === 'true') {
+            filteredProperties = filteredProperties.filter(property =>
+                property.listings && property.listings.some(listing =>
+                    listing.virtualTourUrl
+                )
+            );
+        }
+
+        const response = {
             data: filteredProperties,
             pagination: {
                 currentPage: pageNumber,
@@ -489,13 +840,47 @@ exports.getAllProperties = async (filters = {}, page = 1, limit = 10) => {
                     (filters.directOwnerOnly === "true" ? filteredProperties.length : totalProperties) / pageSize
                 ),
             },
-            statusCode: StatusCodes.OK,
+            statusCode: StatusCodes.OK
+        };
+
+        // Include search term in response if it was provided (for search functionality)
+        if (filters.search || filters.searchTerm || filters.q) {
+            response.searchTerm = filters.searchTerm || filters.q;
+        }
+
+        // Include applied filters summary (Enhanced with all available filters)
+        response.appliedFilters = {
+            hasSearch: !!(filters.searchTerm || filters.q),
+            hasLocationFilter: !!(filters.city || filters.state || filters.zipCode),
+            hasPriceFilter: !!(minPrice || maxPrice),
+            hasListingPriceFilter: !!(filters.minListingPrice || filters.maxListingPrice),
+            hasBedroomFilter: !!(filters.bedrooms || filters.minBedrooms || filters.maxBedrooms),
+            hasBathroomFilter: !!(filters.bathrooms || filters.minBathrooms || filters.maxBathrooms),
+            hasSquareFeetFilter: !!(filters.minSquareFeet || filters.maxSquareFeet),
+            hasLotSizeFilter: !!(filters.minLotSize || filters.maxLotSize),
+            hasYearBuiltFilter: !!(filters.minYearBuilt || filters.maxYearBuilt),
+            hasDateFilter: !!(filters.listedAfter || filters.listedBefore),
+            hasFeaturesFilter: !!filters.features,
+            hasGeoFilter: !!(filters.latitude && filters.longitude && filters.radius),
+            hasMLSFilter: !!(filters.mlsNumber || filters.mlsStatus),
+            hasMediaFilter: !!(filters.hasImages || filters.hasVirtualTour),
+            propertyType: filters.propertyType,
+            status: filters.status,
+            listingStatus: filters.listingStatus,
+            sortBy: filters.sortBy || 'newest'
+        };
+
+        return {
+            data: response,
+            statusCode: StatusCodes.OK
         };
 
     } catch (e) {
-        return handleServiceError("PropertyService", "getAllProperties", e, "Error fetching properties");
+        console.error('PropertyService getAllProperties error:', e);
+        return handleServiceError("PropertyService", "getAllProperties", e, "Error fetching/searching properties");
     }
 };
+
 
 exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
     try {
@@ -559,68 +944,127 @@ exports.getPropertiesByOwner = async (ownerId, page = 1, limit = 10) => {
     }
 };
 
-exports.searchProperties = async (searchTerm = "", filters = {}, page = 1, limit = 10) => {
+
+exports.deleteProperty = async (propertyId, userId) => {
     try {
-        const { Property } = getModels();
+        const { Listing, Property, PropertyMedia } = getModels();
 
-        const pageNumber = Math.max(parseInt(page, 10), 1);
-        const pageSize = Math.max(parseInt(limit, 10), 1);
-        const offset = (pageNumber - 1) * pageSize;
+        const property = await Property.findByPk(propertyId);
 
-        const whereClause = {};
-
-        if (searchTerm && searchTerm.trim() !== "") {
-            whereClause[Op.or] = [
-                { title: { [Op.iLike]: `%${searchTerm}%` } },
-                { description: { [Op.iLike]: `%${searchTerm}%` } },
-                { city: { [Op.iLike]: `%${searchTerm}%` } },
-                { state: { [Op.iLike]: `%${searchTerm}%` } },
-                { address: { [Op.iLike]: `%${searchTerm}%` } }
-            ];
+        if (!property) {
+            return {
+                error: "Property not found",
+                statusCode: StatusCodes.NOT_FOUND
+            };
         }
 
-        if (filters.propertyType) {
-            whereClause.propertyType = filters.propertyType;
+        if (property.ownerId !== userId) {
+            return {
+                error: "Unauthorized: You can only delete your own properties",
+                statusCode: StatusCodes.FORBIDDEN
+            };
         }
 
-        if (filters.miniPrice || filters.maxPrice) {
-            const priceFilter = {};
-            if (!isNaN(parseFloat(filters.miniPrice))) {
-                priceFilter[Op.gte] = parseFloat(filters.miniPrice);
+        const activeListings = await Listing.count({
+            where: {
+                propertyId,
+                listingStatus: { [Op.in]: ['ACTIVE', 'PENDING'] }
             }
-            if (!isNaN(parseFloat(filters.maxPrice))) {
-                priceFilter[Op.lte] = parseFloat(filters.maxPrice);
-            }
-            if (Object.keys(priceFilter).length > 0) {
-                whereClause.price = priceFilter;
-            }
-        }
-
-        const { rows: properties, count: totalProperties } = await Property.findAndCountAll({
-            where: whereClause,
-            order: [['createdAt', 'DESC']],
-            offset,
-            limit: pageSize
         });
 
+        if (activeListings > 0) {
+            return {
+                error: "Cannot delete property with active listings. Please withdraw or sell all listings first.",
+                statusCode: StatusCodes.BAD_REQUEST
+            };
+        }
+
+        const mediaFiles = await PropertyMedia.findAll({
+            where: { propertyId },
+            attributes: ['cloudinaryId']
+        });
+
+        for (const media of mediaFiles) {
+            if (media.cloudinaryId) {
+                try {
+                    await cloudinary.uploader.destroy(media.cloudinaryId);
+                } catch (cloudinaryError) {
+                    logger.error("Error deleting from cloudinary:", cloudinaryError);
+                }
+            }
+        }
+
+        await Property.destroy({ where: { propertyId } });
+
         return {
-            data: {
-                properties,
-                pagination: {
-                    currentPage: pageNumber,
-                    pageSize,
-                    totalProperties,
-                    totalPages: Math.ceil(totalProperties / pageSize)
-                },
-                searchTerm
-            },
+            data: { propertyId },
             statusCode: StatusCodes.OK
         };
 
     } catch (e) {
-        return handleServiceError('PropertyService', 'searchProperties', e, 'Error searching properties');
+        return handleServiceError('PropertyService', 'deleteProperty', e, 'Error deleting property');
     }
 };
+
+exports.deleteAllProperties = async (user) => {
+    try {
+        const { Listing, Property, PropertyMedia } = getModels();
+
+        if (!user || user.roleName !== "SYSADMIN") {
+            return {
+                error: "Unauthorized: Only sysadmins can perform this action",
+                statusCode: StatusCodes.FORBIDDEN
+            };
+        }
+
+        const properties = await Property.findAll({ attributes: ["propertyId"] });
+
+        if (properties.length === 0) {
+            return {
+                message: "No properties found to delete",
+                statusCode: StatusCodes.OK
+            };
+        }
+
+        const propertyIds = properties.map(p => p.propertyId);
+
+        const mediaFiles = await PropertyMedia.findAll({
+            where: { propertyId: { [Op.in]: propertyIds } },
+            attributes: ["cloudinaryId"]
+        });
+
+        // ✅ Delete Cloudinary files
+        for (const media of mediaFiles) {
+            if (media.cloudinaryId) {
+                try {
+                    await cloudinary.uploader.destroy(media.cloudinaryId);
+                } catch (cloudinaryError) {
+                    logger.error("Error deleting from Cloudinary:", cloudinaryError);
+                }
+            }
+        }
+
+        await Listing.destroy({ where: { propertyId: { [Op.in]: propertyIds } } });
+        await PropertyMedia.destroy({ where: { propertyId: { [Op.in]: propertyIds } } });
+        await Property.destroy({ where: { propertyId: { [Op.in]: propertyIds } } });
+
+        return {
+            data: {
+                message: `Successfully deleted ${properties.length} properties and related data`,
+                statusCode: StatusCodes.OK
+            }
+        };
+
+    } catch (e) {
+        return handleServiceError(
+            "PropertyService",
+            "deleteAllProperties",
+            e,
+            "Error deleting all properties"
+        );
+    }
+};
+
 
 
 //TODO: TESTING OF THE FOLLOWING ENDPOINTS LATER
@@ -644,7 +1088,7 @@ exports.createListing = async (propertyId, body, userId, userRole) => {
             listingPrice: body.listingPrice,
             originalPrice: body.originalPrice || body.listingPrice,
             marketingDescription: body.marketingDescription,
-            listingStatus: body.listingStatus || 'ACTIVE',
+            listingStatus: body.listingStatus || LISTING_STATUS.ACTIVE,
             virtualTourUrl: body.virtualTourUrl || null,
             isOpenHouse: body.isOpenHouse || false,
             openHouseSchedule: body.openHouseSchedule || []
@@ -682,7 +1126,6 @@ exports.createListing = async (propertyId, body, userId, userRole) => {
             'Error creating listing');
     }
 };
-
 
 
 
@@ -755,6 +1198,78 @@ exports.getListingsByRole = async (role, page = 1, limit = 10) => {
         return handleServiceError('PropertyService', 'getListingsByRole', e, 'Error fetching listings by role');
     }
 };
+
+exports.updatePropertyListingStatus = async (propertyId, listingStatus, soldDate, userId) => {
+    try {
+        const { Property, Listing } = getModels();
+
+        if (!propertyId || !listingStatus || !userId) {
+            return {
+                error: "Missing required parameters: propertyId, listingStatus, userId",
+                statusCode: StatusCodes.BAD_REQUEST,
+            };
+        }
+
+        const property = await Property.findByPk(propertyId);
+        if (!property) {
+            return {
+                error: "Property not found",
+                statusCode: StatusCodes.NOT_FOUND,
+            };
+        }
+
+        const listing = await Listing.findOne({
+            where: { propertyId, listedBy: userId },
+        });
+
+        if (!listing) {
+            return {
+                error: "Listing not found for this property and user",
+                statusCode: StatusCodes.NOT_FOUND,
+            };
+        }
+
+        if (listingStatus === "SOLD" && !soldDate) {
+            return {
+                error: "soldDate is required when marking a listing as SOLD",
+                statusCode: StatusCodes.BAD_REQUEST,
+            };
+        }
+
+        const allowedStatuses = [
+            LISTING_STATUS.DRAFT,
+            LISTING_STATUS.ACTIVE,
+            LISTING_STATUS.PENDING,
+            LISTING_STATUS.SOLD,
+            LISTING_STATUS.WITHDRAWN,
+            LISTING_STATUS.EXPIRED
+        ];
+        if (!allowedStatuses.includes(listingStatus)) {
+            return {
+                error: `Invalid listingStatus. Allowed values: ${allowedStatuses.join(", ")}`,
+                statusCode: StatusCodes.BAD_REQUEST,
+            };
+        }
+
+        listing.listingStatus = listingStatus;
+        if (listingStatus === LISTING_STATUS.SOLD) {
+            listing.soldDate = soldDate || new Date();
+        }
+        await listing.save();
+        return {
+            data: listing,
+            statusCode: StatusCodes.OK,
+        };
+    } catch (e) {
+        return handleServiceError(
+            "PropertyService",
+            "updatePropertyListingStatus",
+            e,
+            "Error updating property listing status"
+        );
+    }
+};
+
 
 
 
@@ -843,68 +1358,6 @@ exports.updateProperty = async (propertyId, body, files, userId) => {
     }
 };
 
-exports.deleteProperty = async (propertyId, userId) => {
-    try {
-        const { Listing, Property, PropertyMedia } = getModels();
-
-        const property = await Property.findByPk(propertyId);
-
-        if (!property) {
-            return {
-                error: "Property not found",
-                statusCode: StatusCodes.NOT_FOUND
-            };
-        }
-
-        if (property.ownerId !== userId) {
-            return {
-                error: "Unauthorized: You can only delete your own properties",
-                statusCode: StatusCodes.FORBIDDEN
-            };
-        }
-
-        const activeListings = await Listing.count({
-            where: {
-                propertyId,
-                listingStatus: { [Op.in]: ['ACTIVE', 'PENDING'] }
-            }
-        });
-
-        if (activeListings > 0) {
-            return {
-                error: "Cannot delete property with active listings. Please withdraw or sell all listings first.",
-                statusCode: StatusCodes.BAD_REQUEST
-            };
-        }
-
-        const mediaFiles = await PropertyMedia.findAll({
-            where: { propertyId },
-            attributes: ['cloudinaryId']
-        });
-
-        for (const media of mediaFiles) {
-            if (media.cloudinaryId) {
-                try {
-                    await cloudinary.uploader.destroy(media.cloudinaryId);
-                } catch (cloudinaryError) {
-                    logger.error("Error deleting from cloudinary:", cloudinaryError);
-                }
-            }
-        }
-
-        await Property.destroy({ where: { propertyId } });
-
-        return {
-            data: { propertyId },
-            statusCode: StatusCodes.NO_CONTENT
-        };
-
-    } catch (e) {
-        return handleServiceError('PropertyService', 'deleteProperty', e, 'Error deleting property');
-    }
-};
-
-
 
 exports.getPropertyStats = async (userId = null) => {
     try {
@@ -956,7 +1409,13 @@ exports.getPropertyStats = async (userId = null) => {
 
 exports.updatePropertyStatus = async (propertyId, status, userId) => {
     try {
-        const validStatuses = ['active', 'pending', 'draft', 'sold', 'unavailable', 'AVAILABLE', 'SOLD', 'PENDING', 'DRAFT'];
+        const validStatuses = [
+            PROPERTY_STATUS.ACTIVE,
+            PROPERTY_STATUS.PENDING,
+            PROPERTY_STATUS.DRAFT,
+            PROPERTY_STATUS.SOLD,
+            PROPERTY_STATUS.UNAVAILABLE
+        ];
         if (!validStatuses.includes(status)) {
             return {
                 error: 'Invalid status. Must be one of: active, pending, draft, sold, unavailable',

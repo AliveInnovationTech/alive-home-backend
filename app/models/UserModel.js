@@ -126,11 +126,11 @@ module.exports = (sequelize, DataTypes) => {
                 // }
             },
             password: {
-                type: DataTypes.STRING(64),
+                type: DataTypes.STRING(255),
                 allowNull: false,
                 set(value) {
-                    if (value && (value.length < 8 || value.length > 15)) {
-                        throw new Error('Password must be 8-15 characters');
+                    if (value && (value.length < 8 || value.length > 32)) {
+                        throw new Error('Password must be 8-32 characters');
                     }
                     const hash = bcrypt.hashSync(value, 10);
                     this.setDataValue("password", hash);

@@ -1,34 +1,35 @@
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET must be set in environment variables");
+}
 
 const defaultOptions = {
-  expiresIn: process.env.JWT_LIFETIME,
+    expiresIn: process.env.JWT_LIFETIME || "1h",
 };
 
-const createJWT = ({ payload, options }) => {
-  const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    ...defaultOptions,
-    ...options,
-  });
-  return token;
+const createJWT = ({ payload, options = {} }) => {
+    return jwt.sign(payload, JWT_SECRET, {
+        ...defaultOptions,
+        ...options,
+    });
 };
 
-const isTokenValid = (token) => jwt.verify(token, process.env.JWT_SECRET);
-
-const sendResponseWithCookie = ({ res, statusCode, user, options }) => {
-  const token = createJWT({ payload: { user }, options });
-
-  const oneDay = 1000 * 60 * 60 * 24;
-  res.cookie('token', token, {
-    httpOnly: true,
-    expires: new Date(Date.now() + process.env.JWT_COOKIE_LIFETIME * oneDay),
-    signed: true,
-    // secure flag later
-  });
-  res.status(statusCode).json({ user, token });
+const isTokenValid = (token) => {
+    try {
+        return jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+        if (err.name === "TokenExpiredError") {
+            throw new Error("Token expired");
+        }
+        if (err.name === "JsonWebTokenError") {
+            throw new Error("Invalid token");
+        }
+        throw new Error("Token verification failed");
+    }
 };
-
 module.exports = {
-  isTokenValid,
-  createJWT,
-  sendResponseWithCookie,
+    isTokenValid,
+    createJWT
 };

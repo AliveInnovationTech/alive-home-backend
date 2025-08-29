@@ -474,7 +474,7 @@ exports.searchProperties = async (buyerId, query) => {
             maxPrice: buyer.maximumBudget || query?.filters?.maxPrice
         };
 
-        const propertySearch = await propertyService.searchProperties(
+        const propertySearch = await propertyService.getAllProperties(
             query?.searchTerm || "",
             filters,
             query?.page || 1,

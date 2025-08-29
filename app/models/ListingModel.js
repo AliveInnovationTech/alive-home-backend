@@ -1,5 +1,6 @@
 "use strict";
 const { Model } = require("sequelize");
+const { LISTING_STATUS} = require("../utils/constants")
 
 module.exports = (sequelize, DataTypes) => {
     class Listing extends Model {
@@ -63,14 +64,16 @@ module.exports = (sequelize, DataTypes) => {
             },
             listingStatus: {
                 type: DataTypes.ENUM(
-                    'DRAFT',
-                    'ACTIVE',
-                    'PENDING',
-                    'SOLD',
-                    'WITHDRAWN',
-                    'EXPIRED'),
+                    LISTING_STATUS.DRAFT,
+                    LISTING_STATUS.ACTIVE,
+                    LISTING_STATUS.PENDING,
+                    LISTING_STATUS.SOLD,
+                    LISTING_STATUS.WITHDRAWN,
+                    LISTING_STATUS.EXPIRED
+                ),
+                validate: { isIn: [Object.values(LISTING_STATUS)] },
                 allowNull: false,
-                defaultValue: 'DRAFT'
+                defaultValue: LISTING_STATUS.DRAFT
             },
             listingPrice: {
                 type: DataTypes.DECIMAL(12, 2),

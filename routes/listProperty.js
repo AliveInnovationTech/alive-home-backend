@@ -18,4 +18,10 @@ router.get("/role/listings",
     authorizeRoles("ADMIN", "REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN"),
     controller.getListingsByRole);
 
+
+router.put("/properties/:propertyId/:userId",
+    authenticateUser,
+    authorizeRoles("ADMIN", "REALTOR", "DEVELOPER", "HOMEOWNER", "SYSADMIN"),
+    controller.updateListingStatus);
+
 module.exports = router;
