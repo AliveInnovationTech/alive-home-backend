@@ -1,6 +1,7 @@
 "use strict";
 const Joi = require("joi");
 const { validate } = require("../utils/helpers");
+const {PROPERTY_TYPES} = require("../utils/constants")
 
 exports.createBuyerProfile = async (payload) => {
     const schema = {
@@ -9,7 +10,7 @@ exports.createBuyerProfile = async (payload) => {
         preApproved: Joi.boolean().default(false),
         preApprovalAmount: Joi.number().positive().allow(null),
         preferredLocations: Joi.array().items(Joi.string().min(2).max(100)).default([]),
-        propertyType: Joi.string().valid('HOUSE', 'CONDO', 'TOWNHOUSE', 'MULTIFAMILY').default('HOUSE'),
+        propertyType: Joi.string().valid(...PROPERTY_TYPES).default(PROPERTY_TYPES.APARTMENT),
         cloudinary_id: Joi.string().allow('', null)
     };
 
@@ -34,7 +35,7 @@ exports.updateBuyerProfile = async (payload) => {
         minimumBudget: Joi.number().positive(),
         maximumBudget: Joi.number().positive(),
         preferredLocations: Joi.array().items(Joi.string().min(2).max(100)),
-        propertyType: Joi.string().valid('HOUSE', 'CONDO', 'TOWNHOUSE', 'MULTIFAMILY'),
+        propertyType: Joi.string().valid(...PROPERTY_TYPES),
         cloudinary_id: Joi.string().allow('', null)
     };
 
